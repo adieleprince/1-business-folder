@@ -1,0 +1,25 @@
+{
+  "name": "1-business-folder",
+  "version": "1.0.0",
+  "description": "Royal dynasty Fragrance backend website",
+  "homepage": "https://github.com/adieleprince/1-business-folder#readme",
+  "bugs": {
+    "url": "https://github.com/adieleprince/1-business-folder/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adieleprince/1-business-folder.git"
+  },
+  "license": "ISC",
+  "author": "Egumah Prince",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/config/index.js",
+    "dev": "nodemon src/config/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "nodemon": "^3.1.14"
+  }
+}
