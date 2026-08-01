@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Royal Dynasty · Register & Log in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="RDF logo.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8f5f0;
+      color: #1c1a17;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .auth-container {
+      width: 100%;
+      max-width: 480px;
+      background: #fffdfb;
+      border-radius: 24px;
+      padding: 2.4rem 2rem 2.8rem;
+      box-shadow: 0 20px 50px -20px rgba(28, 26, 23, 0.22);
+      border: 1px solid #e7e0d5;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-header .logo {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .auth-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+      font-size: 1.7rem;
+      letter-spacing: -0.01em;
+    }
+    .auth-header p {
+      color: #5c5650;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: #f1ede8;
+      padding: 0.35rem;
+      border-radius: 60px;
+      margin-bottom: 2rem;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 0.65rem 0.5rem;
+      border: none;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: transparent;
+      color: #5c5650;
+      transition: 0.2s ease;
+      cursor: pointer;
+    }
+    .auth-tab.active {
+      background: #fff;
+      color: #1c1a17;
+      box-shadow: 0 4px 12px rgba(28, 26, 23, 0.08);
+    }
+    .auth-tab:hover:not(.active) {
+      color: #1c1a17;
+    }
+    .auth-form {
+      display: none;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .auth-form.active {
+      display: flex;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #3c352e;
+    }
+    .form-group input {
+      padding: 0.8rem 1rem;
+      border: 1px solid #e7e0d5;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      background: #fcfaf7;
+      transition: 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .form-group input:focus {
+      outline: 2px solid #c49a6c;
+      border-color: transparent;
+      background: #fff;
+    }
+    .form-row {
+      display: flex;
+      gap: 0.8rem;
+    }
+    .form-row .form-group {
+      flex: 1;
+    }
+    .password-hint {
+      font-size: 0.7rem;
+      color: #948c7f;
+      margin-top: 0.15rem;
+    }
+    .btn-primary {
+      background: #c49a6c;
+      color: #fff;
+      border: none;
+      padding: 0.9rem;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: 0.25s ease;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      box-shadow: 0 8px 18px -8px rgba(156, 118, 73, 0.3);
+    }
+    .btn-primary:hover {
+      background: #9c7649;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 26px -10px rgba(156, 118, 73, 0.4);
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: #5c5650;
+    }
+    .auth-footer a {
+      color: #9c7649;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px dotted #c49a6c;
+    }
+    .auth-footer a:hover {
+      color: #1c1a17;
+      border-bottom-color: #1c1a17;
+    }
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 1.8rem;
+      font-size: 0.85rem;
+      color: #5c5650;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: 0.2s;
+    }
+    .back-home:hover {
+      color: #1c1a17;
+      border-bottom-color: #c49a6c;
+    }
+    .toast-message {
+      margin-top: 1.2rem;
+      padding: 0.7rem 1rem;
+      border-radius: 60px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: #eef4e9;
+      color: #2f4a2a;
+      text-align: center;
+      display: none;
+    }
+    .toast-message.error {
+      background: #f8e6e3;
+      color: #a1453a;
+    }
+    .toast-message.show {
+      display: block;
+    }
+    @media (max-width: 500px) {
+      .auth-container {
+        padding: 1.8rem 1.2rem;
+      }
+      .form-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-header">
+    <!-- reuse your logo -->
+    <img src="RDF logo.png" alt="Royal Dynasty Fragrance" class="logo">
+    <h1>Royal Dynasty</h1>
+    <p>Luxury that defines you</p>
+  </div>
+
+  <!-- tab switcher -->
+  <div class="auth-tabs" role="tablist">
+    <button class="auth-tab active" data-tab="login" role="tab" aria-selected="true">Log in</button>
+    <button class="auth-tab" data-tab="register" role="tab" aria-selected="false">Register</button>
+  </div>
+
+  <!-- ====== LOGIN FORM ====== -->
+  <form class="auth-form active" id="loginForm" novalidate>
+    <div class="form-group">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" required>
+    </div>
+    <div class="form-group">
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn-primary">Log in</button>
+    <div class="auth-footer">
+      <span>New here? <a href="#" id="switchToRegister">Create an account</a></span>
+    </div>
+    <div id="loginToast" class="toast-message"></div>
+  </form>
+
+  <!-- ====== REGISTER FORM ====== -->
+  <form class="auth-form" id="registerForm" novalidate>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="regFirstName">First name</label>
+        <input type="text" id="regFirstName" placeholder="Jane" autocomplete="given-name" required>
+      </div>
+      <div class="form-group">
+        <label for="regLastName">Last name</label>
+        <input type="text" id="regLastName" placeholder="Doe" autocomplete="family-name" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="regEmail">Email</label>
+      <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" required>
+    </div>
+    <div class="form-group">
+      <label for="regPassword">Password</label>
+      <input type="password" id="regPassword" placeholder="Min. 8 characters" autocomplete="new-password" required minlength="8">
+      <span class="password-hint">Use at least 8 characters</span>
+    </div>
+    <div class="form-group">
+      <label for="regConfirm">Confirm password</label>
+      <input type="password" id="regConfirm" placeholder="Confirm your password" autocomplete="new-password" required>
+    </div>
+    <button type="submit" class="btn-primary">Create account</button>
+    <div class="auth-footer">
+      <span>Already have an account? <a href="#" id="switchToLogin">Log in</a></span>
+    </div>
+    <div id="registerToast" class="toast-message"></div>
+  </form>
+
+  <!-- back to main site -->
+  <a href="royal-dynasty-fragrance.html" class="back-home">← Back to Royal Dynasty</a>
+</div>
+
+<script>
+  (function() {
+    // ---- DOM refs ----
+    const tabs = document.querySelectorAll('.auth-tab');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const loginToast = document.getElementById('loginToast');
+    const registerToast = document.getElementById('registerToast');
+
+    const switchToRegister = document.getElementById('switchToRegister');
+    const switchToLogin = document.getElementById('switchToLogin');
+
+    // ---- tab switching ----
+    function setActiveTab(tabId) {
+      tabs.forEach(tab => {
+        const isActive = tab.dataset.tab === tabId;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive);
+      });
+
+      loginForm.classList.toggle('active', tabId === 'login');
+      registerForm.classList.toggle('active', tabId === 'register');
+
+      // clear toasts when switching
+      loginToast.classList.remove('show', 'error');
+      registerToast.classList.remove('show', 'error');
+      loginToast.textContent = '';
+      registerToast.textContent = '';
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function(e) {
+        setActiveTab(this.dataset.tab);
+      });
+    });
+
+    switchToRegister.addEventListener('click', function(e) {
+      e.preventDefault();
+      setActiveTab('register');
+    });
+
+    switchToLogin.addEventListener('click', function(e) {
+      e.preventDefault();
+      setActiveTab('login');
+    });
+
+    // ---- helper: show toast ----
+    function showToast(toastEl, message, isError = false) {
+      toastEl.textContent = message;
+      toastEl.classList.remove('error');
+      if (isError) toastEl.classList.add('error');
+      toastEl.classList.add('show');
+      // auto hide after 4s
+      clearTimeout(toastEl._timer);
+      toastEl._timer = setTimeout(() => {
+        toastEl.classList.remove('show');
+      }, 4000);
+    }
+
+    // ---- LOGIN ----
+loginForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  // Check if both fields are filled
+  if (!email || !password) {
+    showToast(loginToast, 'Please fill in both fields.', true);
+    return;
+  }
+
+  try {
+    // Send login details to the backend
+    const response = await fetch(
+      'http://localhost:5000/api/v1/users/login',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      }
+    );
+
+    // Convert backend response to JSON
+    const data = await response.json();
+
+    // If backend returns an error
+    if (!response.ok) {
+      showToast(loginToast, data.message, true);
+      return;
+    }
+
+    // Successful login
+showToast(
+  loginToast,
+  '✅ Logged in successfully!',
+  false
+);
+
+// Save the logged-in user's information
+localStorage.setItem(
+  'user',
+  JSON.stringify(data.user)
+);
+
+// Redirect to the main website after 1 second
+setTimeout(() => {
+  window.location.href = 'royal-dynasty-fragrance.html';
+}, 1000);
+
+  } catch (error) {
+    // If the frontend cannot connect to the backend
+    showToast(
+      loginToast,
+      'Could not connect to the server.',
+      true
+    );
+
+    console.error('LOGIN ERROR:', error);
+  }
+});
+
+    // ---- REGISTER ----
+registerForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const firstName = document.getElementById('regFirstName').value.trim();
+  const lastName = document.getElementById('regLastName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+
+  if (!firstName || !lastName || !email || !password || !confirm) {
+    showToast(registerToast, 'All fields are required.', true);
+    return;
+  }
+
+  if (password !== confirm) {
+    showToast(registerToast, 'Passwords do not match.', true);
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      'http://localhost:5000/api/v1/users/register',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: `${firstName} ${lastName}`,
+          email,
+          password
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showToast(registerToast, data.message, true);
+      return;
+    }
+
+    showToast(registerToast, '🎉 Account created successfully!', false);
+
+  } catch (error) {
+    showToast(
+      registerToast,
+      'Could not connect to the server.',
+      true
+    );
+  }
+});
+
+
+    // ---- extra: click on "Create an account" from login footer ----
+    // already handled via switchToRegister
+
+    // ---- reset toasts if user starts typing ----
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('focus', function() {
+        const parentForm = this.closest('form');
+        if (parentForm) {
+          const toast = parentForm.querySelector('.toast-message');
+          if (toast) {
+            toast.classList.remove('show');
+            toast.textContent = '';
+          }
+        }
+      });
+    });
+
+  })();
+</script>
+</body>
+</html>

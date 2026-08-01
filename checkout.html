@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | Royal Dynasty Fragrance</title>
+  <meta name="description" content="Royal Dynasty Fragrance — premium perfumes, deodorants, body lotions, body mists, roll-ons, lip balm and soap, crafted with skin-safe ingredients.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="RDF logo.png">
+  <style>
+    .payment-modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.6);
+
+    /* ADD THESE */
+    justify-content:center;
+    align-items:center;
+
+    z-index:9999;
+}
+
+.payment-modal-content{
+
+    background:#fff;
+
+    width:500px;
+
+    max-width:95%;
+
+    padding:25px;
+
+    border-radius:12px;
+
+    position:relative;
+
+    animation:popup .35s ease;
+}
+
+@keyframes popup{
+
+    from{
+        opacity:0;
+        transform:scale(.9);
+    }
+
+    to{
+        opacity:1;
+        transform:scale(1);
+    }
+
+}
+
+.payment-close{
+
+    float:right;
+
+    font-size:28px;
+
+    cursor:pointer;
+
+}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --white: #FFFFFF;
+      --ivory: #F8F5F0;
+      --card: #FFFDFB;
+      --ink: #1C1A17;
+      --ink-soft: #5C5650;
+      --ink-faint: #948C7F;
+      --bronze: #C49A6C;
+      --bronze-deep: #9C7649;
+      --bronze-pale: #EFE2D0;
+      --line: #E7E0D5;
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'Inter', sans-serif;
+      --container: 1200px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow-soft: 0 20px 50px -20px rgba(28, 26, 23, .22);
+      --shadow-card: 0 10px 30px -14px rgba(28, 26, 23, .16);
+      --ease: cubic-bezier(.22, .61, .36, 1);
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background: var(--ivory);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .checkout-container {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      padding: 3rem 2.5rem;
+      border: 1px solid var(--line);
+    }
+
+    @media (max-width: 600px) {
+      .checkout-container {
+        padding: 1.8rem 1.2rem;
+      }
+    }
+
+    .checkout-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 2.2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 2px solid var(--bronze-pale);
+    }
+
+    .checkout-header .logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      border-radius: 5px;
+    }
+
+    .checkout-header h1 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .checkout-header .sub {
+      font-size: 0.75rem;
+      color: var(--ink-faint);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 2.2rem;
+    }
+
+    @media (max-width: 700px) {
+      .checkout-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    .form-section h2 {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1.4rem;
+      color: var(--ink);
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--ink-soft);
+      margin-bottom: 0.25rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      background: var(--white);
+      transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+      color: var(--ink);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--bronze);
+      box-shadow: 0 0 0 4px rgba(196, 154, 108, 0.15);
+    }
+
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .order-summary {
+      background: var(--ivory);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1.2rem;
+      border: 1px solid var(--line);
+      position: sticky;
+      top: 20px;
+    }
+
+    .order-summary h2 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1.2rem;
+      color: var(--ink);
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--line);
+      gap: 0.8rem;
+    }
+
+    .order-item:last-child {
+      border-bottom: none;
+    }
+
+    .order-item .item-info {
+      flex: 1;
+    }
+
+    .order-item .item-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    .order-item .item-meta {
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+    }
+
+    .order-item .item-price {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .order-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      border-top: 2px solid var(--bronze);
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+      color: var(--ink);
+    }
+
+    .order-total .total-amount {
+      color: var(--bronze-deep);
+      font-size: 1.3rem;
+    }
+
+    .delivery-notice {
+      margin-top: 1rem;
+      padding: 1rem 1rem;
+      background: #fef9e7;
+      border-left: 4px solid var(--bronze);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .delivery-notice strong {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .empty-cart {
+      text-align: center;
+      padding: 1.5rem 0;
+      color: var(--ink-soft);
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 15px 32px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      letter-spacing: 0.01em;
+      transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), background 0.35s var(--ease);
+      background: var(--bronze);
+      color: #fff;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      background: var(--bronze-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 28px -12px rgba(156, 118, 73, 0.55);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: 1.5px solid var(--line);
+      background: transparent;
+      color: var(--ink-soft);
+      transition: all 0.3s var(--ease);
+      cursor: pointer;
+      text-decoration: none;
+      margin-top: 0.8rem;
+    }
+
+    .btn-secondary:hover {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: color 0.3s var(--ease);
+      margin-top: 1rem;
+    }
+
+    .back-link:hover {
+      color: var(--bronze-deep);
+    }
+
+    .back-link svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .toast-message {
+      margin-top: 1.2rem;
+      padding: 0.8rem 1.2rem;
+      border-radius: 60px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+      display: none;
+      background: #eef4e9;
+      color: #2f4a2a;
+    }
+
+    .toast-message.error {
+      background: #f8e6e3;
+      color: #a1453a;
+    }
+
+    .toast-message.show {
+      display: block;
+    }
+
+    .cart-total-items {
+      font-size: 0.8rem;
+      color: var(--ink-faint);
+      margin-bottom: 0.8rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 1.2rem 0;
+    }
+
+    #ghanaPaymentModal .payment-modal-content button,
+    #paymentSuccessModal .payment-modal-content button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), background 0.35s var(--ease);
+      background: var(--bronze);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    #ghanaPaymentModal .payment-modal-content button:hover,
+    #paymentSuccessModal .payment-modal-content button:hover {
+      background: var(--bronze-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 28px -12px rgba(156, 118, 73, 0.55);
+    }
+
+    #ghanaPaymentModal .payment-modal-content input[type="file"] {
+      width: 100%;
+      padding: 10px 0;
+      border: 1.5px dashed var(--line);
+      border-radius: var(--radius-md);
+      background: var(--ivory);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    #ghanaPaymentModal .payment-modal-content hr {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 1rem 0;
+    }
+
+    #paymentSuccessModal .payment-modal-content ul {
+      padding-left: 1.5rem;
+    }
+
+    #paymentSuccessModal .payment-modal-content ul li {
+      margin-bottom: 0.3rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .btn-loading {
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="checkout-container">
+
+    <!-- Header -->
+    <div class="checkout-header">
+      <img src="RDF logo.png" alt="Royal Dynasty Fragrance" class="logo">
+      <div>
+        <h1>Checkout</h1>
+        <span class="sub">Secure checkout</span>
+      </div>
+    </div>
+
+    <div class="checkout-grid">
+
+      <!-- LEFT: Form -->
+      <div class="form-section">
+        <h2>Shipping Details</h2>
+
+        <form id="checkoutForm" novalidate>
+
+          <div class="form-group">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" placeholder="e.g. Jane Doe" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" placeholder="e.g. +1 555 123 4567" required autocomplete="tel">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="address">Delivery Address</label>
+            <textarea id="address" placeholder="Street, city, postal code…" required autocomplete="street-address"></textarea>
+          </div>
+          <div class="form-group">
+  <label for="currency">Payment Currency</label>
+  <select id="currency" required>
+    <option value="NGN">Nigerian Naira (₦)</option>
+    <option value="GHS">Ghana Cedi (GH₵)</option>
+  </select>
+</div>
+          <button type="submit" class="btn-primary" id="placeOrderBtn">Place Order</button>
+
+          <div id="checkoutToast" class="toast-message"></div>
+        </form>
+
+        <a href="royal-dynasty-fragrance.html" class="back-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Continue Shopping
+        </a>
+      </div>
+
+      <!-- RIGHT: Order Summary -->
+      <div>
+        <div class="order-summary">
+          <h2>Your Order</h2>
+          <div id="orderSummary"></div>
+
+          <!-- Delivery Fee Notice -->
+          <div class="delivery-notice">
+            <strong>📦 Delivery Fee Notice</strong>
+            Please note: Delivery fees are not included in your order total. These will be paid directly to the delivery company, based on their rates. We'll make sure your package is handed over safely, and the delivery team will let you know the exact cost when they arrive.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- GHANA PAYMENT MODAL -->
+  <div id="ghanaPaymentModal" class="payment-modal">
+
+    <div class="payment-modal-content">
+
+      <span id="closePaymentModal" class="payment-close">&times;</span>
+
+      <h2>🇬🇭 Ghana Mobile Money Payment</h2>
+
+      <p><strong>Order ID:</strong> <span id="ghanaOrderID"></span></p>
+
+      <p><strong>Customer:</strong> <span id="ghanaCustomerName"></span></p>
+
+      <p><strong>Amount:</strong> <span id="ghanaAmount"></span></p>
+
+      <hr>
+
+      <h3>Send Payment To</h3>
+
+      <p><strong>MTN Mobile Money</strong></p>
+
+      <p>Number: <strong>0542265313</strong></p>
+
+      <p>Name: <strong>Julian Tawiah</strong></p>
+
+      <hr>
+
+      <label><strong>Upload Payment Receipt</strong></label>
+
+      <input
+        type="file"
+        id="ghanaReceipt"
+        accept="image/*,.pdf"
+      >
+
+      <br><br>
+
+      <button id="ghanaPaidBtn">
+        I've Paid
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- PAYMENT RECEIVED SUCCESS MODAL -->
+  <div id="paymentSuccessModal" class="payment-modal">
+
+    <div class="payment-modal-content">
+
+      <h2>🎉 Order Received</h2>
+
+      <p>
+        Thank you for shopping with
+        <strong>Royal Dynasty Fragrances</strong>.
+      </p>
+
+      <p>
+        Your order has been received. A confirmation email will be sent to
+        <span id="successEmail" style="font-weight:bold;color:#8B6B3D;"></span>
+        once your receipt has been verified.
+      </p>
+
+      <button
+    id="continueShoppingBtn"
+    class="btn-primary"
+>
+    OK
+</button>
+
+    </div>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    // ============================================================
+    // PRODUCTS DATA (needed for price lookup)
+    // ============================================================
+    const PRODUCTS = [
+      {
+        id: 1,
+        name: "Khamrah Qahwa",
+        priceNGN: 54150,
+        priceGHS: 451.25
+      },
+      {
+        id: 2,
+        name: "Qaed Al Fursan",
+        priceNGN: 55200,
+        priceGHS: 460
+      },
+      {
+        id: 3,
+        name: "Club de Nuit Intense Man",
+        priceNGN: 65400,
+        priceGHS: 545
+      },
+      {
+        id: 4,
+        name: "Hawas Ice",
+        priceNGN: 72000,
+        priceGHS: 600
+      },
+      {
+        id: 5,
+        name: "Sure Men Quantum Dry",
+        priceNGN: 8400,
+        priceGHS: 70
+      },
+      {
+        id: 6,
+        name: "Sure Men Invisible Ice Fresh",
+        priceNGN: 7200,
+        priceGHS: 60
+      },
+      {
+        id: 7,
+        name: "Bare Vanilla",
+        priceNGN: 19200,
+        priceGHS: 160
+      },
+      {
+        id: 8,
+        name: "Pure Seduction",
+        priceNGN: 26400,
+        priceGHS: 220
+      },
+      {
+        id: 9,
+        name: "Pearl & Beauty",
+        priceNGN: 3600,
+        priceGHS: 30
+      },
+      {
+        id: 10,
+        name: "Dry Comfort",
+        priceNGN: 3600,
+        priceGHS: 30
+      },
+      {
+        id: 11,
+        name: "EOS Shea Better Lotion",
+        priceNGN: 39900,
+        priceGHS: 332.50
+      },
+      {
+        id: 12,
+        name: "Nivea Lip Balm",
+        priceNGN: 4800,
+        priceGHS: 40
+      },
+      {
+        id: 13,
+        name: "Burt's Bees Lip Balm",
+        priceNGN: 7200,
+        priceGHS: 60
+      },
+      {
+        id: 14,
+        name: "Dove Beauty Bar",
+        priceNGN: 10260,
+        priceGHS: 85.50
+      },
+      {
+        id: 15,
+        name: "Olay Bathing Soap",
+        priceNGN: 43200,
+        priceGHS: 360
+      }
+    ];
+
+    // ============================================================
+    // CART SYSTEM
+    // ============================================================
+    let cart = [];
+
+    function loadCartFromStorage() {
+      try {
+        const saved = localStorage.getItem('cart');
+        if (saved) {
+          cart = JSON.parse(saved).map(item => {
+            const product = PRODUCTS.find(p => p.name === item.name);
+            return {
+              name: item.name,
+              quantity: Number(item.quantity) || 1,
+              priceNGN: Number(item.priceNGN) || Number(product?.priceNGN) || 0,
+              priceGHS: Number(item.priceGHS) || Number(product?.priceGHS) || 0
+            };
+          });
+        }
+      } catch (e) {
+        console.warn('Could not load cart from localStorage:', e);
+        cart = [];
+      }
+    }
+
+    function saveCartToStorage() {
+      try {
+        localStorage.setItem('cart', JSON.stringify(cart));
+      } catch (e) {
+        console.warn('Could not save cart to localStorage:', e);
+      }
+    }
+
+    function renderCart() {
+      const summary = document.getElementById('orderSummary');
+
+      if (!cart || cart.length === 0) {
+        summary.innerHTML = `
+          <div class="empty-cart">
+            <p>Your cart is empty.</p>
+            <p style="font-size:0.8rem;color:var(--ink-faint);margin-top:0.4rem;">
+              Add some products to your cart first!
+            </p>
+          </div>
+        `;
+        document.getElementById('placeOrderBtn').disabled = true;
+        return;
+      }
+
+      let totalNGN = 0;
+      let totalGHS = 0;
+      let html = '';
+
+      cart.forEach((product, index) => {
+        const qty = Number(product.quantity) || 1;
+        const priceNGN = Number(product.priceNGN) || 0;
+        const priceGHS = Number(product.priceGHS) || 0;
+
+        const subtotalNGN = priceNGN * qty;
+        const subtotalGHS = priceGHS * qty;
+
+        totalNGN += subtotalNGN;
+        totalGHS += subtotalGHS;
+
+        html += `
+          <div class="order-item">
+            <div class="item-info">
+              <div class="item-name">${product.name}</div>
+              <div class="item-meta">Qty: ${qty}</div>
+            </div>
+            <div class="item-price">
+              ₦${subtotalNGN.toLocaleString('en-NG')}
+              <br>
+              <span style="font-weight:400;font-size:0.7rem;color:var(--ink-faint);">
+                GH₵${subtotalGHS.toLocaleString('en-GH', {minimumFractionDigits:2, maximumFractionDigits:2})}
+              </span>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+        <div class="order-total">
+          <span>Total</span>
+          <span class="total-amount">
+            ₦${totalNGN.toLocaleString('en-NG')}
+            <br>
+            <span style="font-weight:400;font-size:0.8rem;color:var(--ink-soft);">
+              GH₵${totalGHS.toLocaleString('en-GH', {minimumFractionDigits:2, maximumFractionDigits:2})}
+            </span>
+          </span>
+        </div>
+        <div class="cart-total-items">${cart.length} item(s) in cart</div>
+      `;
+
+      summary.innerHTML = html;
+      document.getElementById('placeOrderBtn').disabled = false;
+    }
+
+    // ============================================================
+    // CHECKOUT FORM
+    // ============================================================
+    const form = document.getElementById('checkoutForm');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const toast = document.getElementById('checkoutToast');
+
+    function getCartTotal(currency) {
+      return cart.reduce((sum, product) => {
+        const qty = Number(product.quantity) || 1;
+
+        if (currency === 'GHS') {
+          return sum + (Number(product.priceGHS) || 0) * qty;
+        }
+
+        return sum + (Number(product.priceNGN) || 0) * qty;
+      }, 0);
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      console.log('SUBMIT BUTTON WAS CLICKED');
+
+      const fullName = document.getElementById('fullName').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const currency = document.getElementById('currency').value;
+
+      if (!fullName || !phone || !email || !address) {
+        toast.textContent = 'Please fill in all fields.';
+        toast.className = 'toast-message error show';
+        return;
+      }
+
+      if (!email.includes('@') || !email.includes('.')) {
+        toast.textContent = 'Please enter a valid email address.';
+        toast.className = 'toast-message error show';
+        return;
+      }
+
+      if (cart.length === 0) {
+        toast.textContent = 'Your cart is empty. Add some products first!';
+        toast.className = 'toast-message error show';
+        return;
+      }
+
+      const amount = getCartTotal(currency);
+
+      if (amount <= 0) {
+        toast.textContent = 'Cart total is invalid.';
+        toast.className = 'toast-message error show';
+        return;
+      }
+
+      const orderData = {
+        customerName: fullName,
+        phone,
+        email,
+        address,
+        currency,
+        amount,
+        items: cart
+      };
+      
+      const selectedCurrency = document.getElementById("currency").value;
+
+      if (selectedCurrency === "GHS") {
+        showGhanaPaymentPopup(orderData);
+        return;
+      }
+      
+      console.log('STARTING PAYMENT:', orderData);
+
+      placeOrderBtn.disabled = true;
+      placeOrderBtn.textContent = 'Starting Payment...';
+
+      try {
+        const response = await fetch('http://localhost:5000/api/v1/payments/initialize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(orderData)
+        });
+
+        const data = await response.json();
+        console.log('PAYMENT INIT RESPONSE:', data);
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to start payment');
+        }
+
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+          return;
+        }
+
+        throw new Error('Payment link not returned by backend');
+      } catch(error){
+
+    console.error("FULL ERROR:", error);
+
+    alert(error.message);
+
+        toast.textContent = error.message || 'Could not start payment. Please try again.';
+        toast.className = 'toast-message error show';
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.textContent = 'Place Order';
+      }
+    });
+
+    // ============================================================
+    // GHANA PAYMENT FUNCTIONS
+    // ============================================================
+    
+    function showGhanaPaymentPopup(orderData) {
+      // Calculate GHS total properly
+      const totalGHS = cart.reduce((sum, product) => {
+        const qty = Number(product.quantity) || 1;
+        return sum + (Number(product.priceGHS) || 0) * qty;
+      }, 0);
+
+      document.getElementById("ghanaOrderID").textContent =
+        "RDF-" + Date.now();
+
+      document.getElementById("ghanaCustomerName").textContent =
+        orderData.customerName;
+
+      document.getElementById("ghanaAmount").textContent =
+        "GH₵ " + totalGHS.toLocaleString('en-GH', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+      document.getElementById("ghanaPaymentModal").style.display="flex";
+    }
+
+    // Close modal when clicking the X
+    document.getElementById("closePaymentModal").onclick = function () {
+      document.getElementById("ghanaPaymentModal").style.display = "none";
+    };
+
+    // Prevent accidental close: the Ghana payment modal should only close
+    // via the X button or after a successful "I've Paid" submission.
+    // (Removed leftover debug logic that used to pop the success modal
+    // open just from clicking the backdrop.)
+
+    // Ghana "I've Paid" button handler - NOW SENDS TO BACKEND
+    // Ghana "I've Paid" button handler - FIXED VERSION
+document.getElementById("ghanaPaidBtn").onclick = async function () {
+  const receipt = document.getElementById("ghanaReceipt").files[0];
+
+  if (!receipt) {
+    alert("Please upload your payment receipt.");
+    return;
+  }
+
+  // Get order details
+  const fullName = document.getElementById('fullName').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const orderId = document.getElementById("ghanaOrderID").textContent;
+  const amount = document.getElementById("ghanaAmount").textContent;
+
+  // Prepare form data for file upload
+  const formData = new FormData();
+  formData.append('receipt', receipt);
+  formData.append('orderId', orderId);
+  formData.append('customerName', fullName);
+  formData.append('phone', phone);
+  formData.append('email', email);
+  formData.append('address', address);
+  formData.append('amount', amount);
+  formData.append('items', JSON.stringify(cart));
+
+  // Show loading state
+  const btn = document.getElementById("ghanaPaidBtn");
+  const originalText = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span> Submitting...';
+  btn.disabled = true;
+  btn.classList.add('btn-loading');
+
+  try {
+    console.log('SENDING GHANA PAYMENT TO BACKEND...');
+    
+    const response = await fetch('http://localhost:5000/api/v1/ghana-payment', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+    console.log('BACKEND RESPONSE:', result);
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to submit payment');
+    }
+
+    // Close the Ghana payment modal first
+    document.getElementById("ghanaPaymentModal").style.display="none";
+
+    // Reset button state
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+
+    // Show success message with OK button
+    console.log("Reached success popup");
+    const successModal = document.getElementById("paymentSuccessModal");
+    document.getElementById("successEmail").textContent = email;
+    successModal.style.display="flex";
+
+    // Wait for user to click Continue Shopping button
+    // The Continue Shopping button will clear the cart and redirect
+
+  } catch (error) {
+    console.error('GHANA PAYMENT ERROR:', error);
+    alert(error.message || 'Failed to submit payment. Please try again.');
+    
+    // Reset button
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+  }
+};
+
+    // Continue Shopping button handler - FIXED VERSION
+document.getElementById("continueShoppingBtn").onclick = function () {
+
+    // Close the popup first
+    document.getElementById("paymentSuccessModal").style.display = "none";
+
+    // Now clear the cart
+    cart = [];
+    saveCartToStorage();
+    renderCart();
+
+    // Redirect after a short delay
+    setTimeout(() => {
+        window.location.href = "royal-dynasty-fragrance.html";
+    }, 300);
+};
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    loadCartFromStorage();
+    renderCart();
+
+    console.log('Checkout page loaded!');
+  </script>
+
+</body>
+</html>

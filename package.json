@@ -2,6 +2,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.8.0"
+    "mongoose": "^9.8.0",
+    "resend": "^6.18.0"
   }
 }

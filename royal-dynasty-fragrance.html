@@ -8,7 +8,79 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="RDF logo.png">
 <style>
+  /* CART PANEL */
+.cart-panel {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 380px;
+  max-width: 90%;
+  height: 100vh;
+  background: #fffdfb;
+  z-index: 9999;
+  padding: 2rem;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+
+/* When opened */
+.cart-panel.open {
+  right: 0;
+}
+
+.cart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.close-cart {
+  border: none;
+  background: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: color 0.2s;
+}
+
+.close-cart:hover {
+  color: var(--ink);
+}
+
+.cart-item {
+  margin-bottom: 0.8rem;
+}
+
+.cart-item strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.cart-item p {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0.1rem 0;
+}
+
+.cart-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 2px solid var(--bronze);
+  color: var(--bronze-deep);
+}
+
+#cartItems hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 0.6rem 0;
+}
+
   .about-image {
   width: 100%;
   height: 500px;
@@ -403,8 +475,6 @@
 </defs>
 </svg>
 
-<!-- ============ Seal (logo) template — reused inline ============ -->
-
 <!-- ============ HEADER ============ -->
 <header class="site-header" id="siteHeader">
   <div class="container inner">
@@ -414,14 +484,22 @@
     </a>
 
     <nav class="main-nav" id="mainNav" aria-label="Primary">
-      <button class="nav-close" id="navClose" aria-label="Close menu"><svg><use href="#ic-close"/></svg></button>
-      <a href="#main" class="nav-link">Home</a>
-      <a href="#shop" class="nav-link">Shop</a>
-      <a href="#categories" class="nav-link">Categories</a>
-      <a href="#about" class="nav-link">About</a>
-      <a href="#stores" class="nav-link">Stores</a>
-      <a href="#contact" class="nav-link">Contact</a>
-    </nav>
+  <button class="nav-close" id="navClose" aria-label="Close menu">
+    <svg><use href="#ic-close"/></svg>
+  </button>
+
+  <a href="#main" class="nav-link">Home</a>
+  <a href="#shop" class="nav-link">Shop</a>
+  <a href="#categories" class="nav-link">Categories</a>
+  <a href="#about" class="nav-link">About</a>
+  <a href="#stores" class="nav-link">Stores</a>
+  <a href="#contact" class="nav-link">Contact</a>
+
+  <!-- Account link -->
+  <a href="deepseek_html_20260724_c26252.html" class="nav-link" id="accountLink">
+  Login / Register
+</a>
+</nav>
 
     <div class="header-actions">
       <button class="icon-btn" id="cartBtn" aria-label="View cart">
@@ -564,8 +642,8 @@
         <p class="form-msg" id="formMsg"></p>
       </div>
       <div class="contact-cards reveal">
-        <div class="contact-card"><svg><use href="#ic-phone"/></svg><div><strong>Call Us</strong><span>+1 (555) 201-4488</span></div></div>
-        <div class="contact-card"><svg><use href="#ic-mail"/></svg><div><strong>Email Us</strong><span>hello@royaldynastyfragrance.com</span></div></div>
+        <div class="contact-card"><svg><use href="#ic-phone"/></svg><div><strong>Call Us</strong><span>+2347033092758 +233542265313</span></div></div>
+        <div class="contact-card"><svg><use href="#ic-mail"/></svg><div><strong>Email Us</strong><span>royaldynastyfragrances@gmail.com</span></div></div>
         <div class="contact-card"><svg><use href="#ic-store"/></svg><div><strong>Visit a Boutique</strong><span>4 locations — see stores above</span></div></div>
       </div>
     </div>
@@ -650,12 +728,32 @@
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"><svg><use href="#ic-check"/></svg><span id="toastMsg">Added to cart</span></div>
 
+<!-- ============ CART PANEL ============ -->
+
+<div style="display:flex;gap:10px;margin-top:10px;">
+  <button id="clearCartBtn" class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);flex:1;">
+    🗑️ Clear Cart
+  </button>
+</div>
+
+<div id="cartPanel" class="cart-panel">
+  <div class="cart-header">
+    <h2>Your Cart</h2>
+    <button id="closeCart" class="close-cart" type="button">×</button>
+  </div>
+  <div id="cartItems">
+    <p>Your cart is empty.</p>
+  </div>
+  <button id="checkoutBtn" class="btn btn-primary" type="button">Checkout</button>
+</div>
+
 <script>
 'use strict';
 
-/* ============================================================
-   DATA — edit these arrays to change site content
-   ============================================================ */
+// ============================================================
+// DATA
+// ============================================================
+
 const CATEGORIES = [
   {id:"Perfumes",    name:"Perfumes",     image: "images/Perfumes.png",   blurb:"Signature scents that linger"},
   {id:"Deodorants",  name:"Deodorants",   image: "images/Deodorants.png", blurb:"All-day freshness, gently formulated"},
@@ -666,81 +764,34 @@ const CATEGORIES = [
   {id:"Soap",        name:"Soap",         image: "images/Soap.png",      blurb:"Cleanse like royalty"}
 ];
 
-const PRODUCTS = [
-  {id:1,  name:"Dynasty Noir",       cat:"Perfumes",   catLabel:"Perfume · 50ml",        price:68, oldPrice:85, rating:4.8, reviews:212, tag:"Bestseller",  icon:"ic-perfume",
-    desc:"A smoky amber signature with notes of oud, black pepper and warm vanilla.",
-    details:["Top: black pepper, bergamot","Heart: oud, rose","Base: amber, vanilla"]},
-  {id:2,  name:"Golden Empress",     cat:"Perfumes",   catLabel:"Perfume · 50ml",        price:72, oldPrice:null, rating:4.7, reviews:98,  tag:"New Arrival", icon:"ic-perfume",
-    desc:"A radiant floral-gourmand built around jasmine and honeyed fig.",
-    details:["Top: jasmine, bergamot","Heart: fig, honey","Base: sandalwood, musk"]},
-  {id:3,  name:"Velvet Crown",       cat:"Perfumes",   catLabel:"Perfume · 30ml",        price:54, oldPrice:65, rating:4.6, reviews:156, tag:null,           icon:"ic-perfume",
-    desc:"Soft powdery iris wrapped in creamy sandalwood.",
-    details:["Top: violet leaf","Heart: iris, powder accord","Base: sandalwood"]},
-  {id:4,  name:"Amber Throne",       cat:"Perfumes",   catLabel:"Perfume · 50ml",        price:70, oldPrice:null, rating:4.9, reviews:301, tag:"Bestseller",  icon:"ic-perfume",
-    desc:"Our boldest amber, warmed with cedar and a hint of smoked leather.",
-    details:["Top: cardamom","Heart: amber, cedar","Base: smoked leather"]},
-  {id:5,  name:"Royal Shield Deodorant", cat:"Deodorants", catLabel:"Roll-On · 75g",     price:12, oldPrice:null, rating:4.5, reviews:87,  tag:null,           icon:"ic-deodorant",
-    desc:"24-hour protection with a light, powdery finish and no white marks.",
-    details:["Aluminum-free formula","Bergamot & cedarwood scent","Glides on smooth"]},
-  {id:6,  name:"Court Fresh Deodorant Spray", cat:"Deodorants", catLabel:"Spray · 150ml", price:14, oldPrice:null, rating:4.4, reviews:44, tag:"New Arrival",  icon:"ic-deodorant",
-    desc:"A cooling burst of citrus and mint that lasts through the day.",
-    details:["Fast-drying formula","Citrus & mint scent","Fabric-safe"]},
-  {id:7,  name:"Silk Regalia Body Lotion", cat:"BodyLotions", catLabel:"Lotion · 250ml",     price:22, oldPrice:28, rating:4.7, reviews:176, tag:"Bestseller",   icon:"ic-lotion",
-    desc:"Whipped shea and vitamin E melt in for hours of softness.",
-    details:["Shea butter & vitamin E","Fragrance-layered with perfumes","Non-greasy finish"]},
-  {id:8,  name:"Ivory Bloom Body Lotion", cat:"BodyLotions", catLabel:"Lotion · 250ml",      price:20, oldPrice:null, rating:4.6, reviews:63, tag:null,           icon:"ic-lotion",
-    desc:"A lightweight, fast-absorbing lotion scented with white florals.",
-    details:["White floral accord","Fast-absorbing","Suitable for daily use"]},
-  {id:9,  name:"Rose Dynasty Body Mist", cat:"BodyMists",   catLabel:"Body Mist · 200ml",    price:18, oldPrice:null, rating:4.8, reviews:240, tag:"Bestseller",   icon:"ic-mist",
-    desc:"A sheer veil of Bulgarian rose and soft musk for everyday wear.",
-    details:["Bulgarian rose accord","Alcohol-light formula","Layers well with lotion"]},
-  {id:10, name:"Citrus Regent Body Mist", cat:"BodyMists",  catLabel:"Body Mist · 200ml",    price:18, oldPrice:null, rating:4.5, reviews:52, tag:"New Arrival",   icon:"ic-mist",
-    desc:"Bright bergamot and mandarin with a whisper of white tea.",
-    details:["Bergamot & mandarin","White tea accord","Ideal for daytime wear"]},
-  {id:11, name:"Amber Court Roll-On Oil", cat:"rollons", catLabel:"Oil · 10ml",          price:16, oldPrice:null, rating:4.6, reviews:71, tag:null,            icon:"ic-rollon",
-    desc:"Concentrated amber oil, perfect for pulse points and layering.",
-    details:["Oil-based, long-wearing","Travel-friendly size","Great for layering"]},
-  {id:12, name:"Musk Heir Roll-On Oil", cat:"rollons",  catLabel:"Oil · 10ml",           price:16, oldPrice:null, rating:4.7, reviews:58, tag:null,            icon:"ic-rollon",
-    desc:"Clean white musk with a soft, skin-like finish.",
-    details:["White musk accord","Skin-safe, alcohol-free","Travel-friendly size"]},
-  {id:13, name:"Royal Honey Lip Balm", cat:"LipBalm",   catLabel:"Balm · 4.5g",          price:8,  oldPrice:null, rating:4.9, reviews:410, tag:"Bestseller",   icon:"ic-lipbalm",
-    desc:"Beeswax and honey extract for lips that stay soft all day.",
-    details:["Beeswax & honey extract","Non-tinted, high shine","Pocket-size tube"]},
-  {id:14, name:"Velvet Rose Lip Balm", cat:"LipBalm",   catLabel:"Balm · 4.5g",          price:8,  oldPrice:null, rating:4.6, reviews:73,  tag:"New Arrival",  icon:"ic-lipbalm",
-    desc:"A tinted rose balm with shea butter and a satin finish.",
-    details:["Sheer rose tint","Shea butter base","Satin finish"]},
-  {id:15, name:"Bronze Bath Soap Bar", cat:"Soap",      catLabel:"Bar · 120g",           price:9,  oldPrice:null, rating:4.5, reviews:66,  tag:null,           icon:"ic-soap",
-    desc:"Cold-pressed with shea butter and warm sandalwood.",
-    details:["Cold-pressed formula","Shea butter enriched","Sandalwood scent"]},
-  {id:16, name:"Ivory Milk Soap Bar", cat:"Soap",       catLabel:"Bar · 120g",           price:9,  oldPrice:null, rating:4.7, reviews:94,  tag:null,           icon:"ic-soap",
-    desc:"Oat milk and honey for a gentle, creamy lather.",
-    details:["Oat milk & honey","Creamy, gentle lather","Suitable for sensitive skin"]}
-];
-
 const BUNDLES = [
   {
     name: "First Class",
     desc: "Afnan 9pm Elixir · Body spray · Royal Honey Lip Balm · Nivea bar soap · Face mask",
-    price: 58,
-    oldPrice: 73,
+    priceNGN: 81500,
+    priceGHS: 680,
+    oldPriceNGN: 91500,
+    oldPriceGHS: 763,
     save: "Save 20%",
     image: "images/first-class.jpg"
   },
-
   {
     name: "Second Class",
     desc: "Club De Nuit Intense · Body Spray · Nivea roll-on · Nivea bar soap · Face mask",
-    price: 62,
-    oldPrice: 73,
+    priceNGN: 71500,
+    priceGHS: 596,
+    oldPriceNGN: 81500,
+    oldPriceGHS: 680,
     save: "Save 15%",
     image: "images/second-class.jpg"
   },
-
   {
     name: "Economy",
     desc: "Khamrah Qahwa · Body Mist · Nivea bar soap · Face mask",
-    price: 32,
-    oldPrice: 36,
+    priceNGN: 45000,
+    priceGHS: 471,
+    oldPriceNGN: 66500,
+    oldPriceGHS: 555,
     save: "Save 10%",
     image: "images/economy.jpg"
   }
@@ -771,9 +822,34 @@ const FILTERS = [
   {key:"Soap", label:"Soap"}
 ];
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
+// ============================================================
+// FETCH PRODUCTS FROM BACKEND
+// ============================================================
+
+let PRODUCTS = [];
+let allProducts = [];
+
+async function fetchProducts() {
+  try {
+    const response = await fetch("http://localhost:5000/api/v1/products");
+    if (!response.ok) {
+      throw new Error("Failed to load products");
+    }
+    const data = await response.json();
+    allProducts = data;
+    PRODUCTS = data;
+    console.log(`✅ Loaded ${PRODUCTS.length} products from database`);
+    return data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
 function starIcons(rating){
   let html = '<span class="stars" aria-hidden="true">';
   for(let i=1;i<=5;i++){
@@ -797,9 +873,10 @@ function observeReveals(root){
   (root||document).querySelectorAll('.reveal:not(.is-visible)').forEach(el=>revealObserver.observe(el));
 }
 
-/* ============================================================
-   RENDER
-   ============================================================ */
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+
 function renderCategories(){
   const el = document.getElementById('categoryGrid');
   el.innerHTML = CATEGORIES.map(c => `
@@ -832,33 +909,81 @@ function setFilter(key){
   });
 }
 
-function renderProducts(){
+async function renderProducts() {
+  const products = await fetchProducts();
   const el = document.getElementById('productGrid');
-  el.innerHTML = PRODUCTS.map(p => `
-    <article class="product-card reveal" data-cat="${p.cat}">
-      <div class="product-media">
-        ${p.tag ? `<span class="product-tag${p.tag==='New Arrival'?' new':''}">${p.tag}</span>` : ''}
-        <svg class="bottle-icon"><use href="#${p.icon}"/></svg>
-        <button class="quick-view-btn" data-id="${p.id}">Quick View</button>
-      </div>
-      <div class="product-body">
-        <span class="product-cat">${p.catLabel}</span>
-        <h3 class="product-name">${p.name}</h3>
-        <div class="rating">${starIcons(p.rating)}<span>${p.rating} (${p.reviews})</span></div>
-        <div class="price-row">
-          <span class="price">$${p.price}</span>
-          ${p.oldPrice ? `<span class="price old">$${p.oldPrice}</span>` : ''}
-        </div>
-        <button class="add-cart-btn" data-id="${p.id}">Add to Cart</button>
-      </div>
-    </article>`).join('');
 
-  el.querySelectorAll('.quick-view-btn').forEach(btn=> btn.addEventListener('click', ()=> openModal(Number(btn.dataset.id))));
-  el.querySelectorAll('.add-cart-btn').forEach(btn=> btn.addEventListener('click', ()=>{
-    const p = PRODUCTS.find(x=>x.id===Number(btn.dataset.id));
-    addToCart(p.name, 1);
-  }));
-  observeReveals(el);
+  if (products.length === 0) {
+    el.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:60px 20px;">
+        <h3 style="color:var(--ink-soft);">No products available</h3>
+        <p style="color:var(--ink-faint);">Check back soon for new arrivals!</p>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = products.map(p => {
+    const isOutOfStock = p.stock === 0;
+    const isLowStock = p.stock > 0 && p.stock < 5;
+    
+    return `
+      <article class="product-card reveal" data-cat="${p.category || ''}">
+        <div class="product-media">
+          ${p.tag ? `<span class="product-tag">${p.tag}</span>` : ""}
+          ${isOutOfStock ? `<span class="product-tag" style="background:var(--danger);">Out of Stock</span>` : ""}
+          <img 
+            src="${p.image && p.image.startsWith('http') ? p.image : (p.image ? `http://localhost:5000/uploads/${p.image}` : 'images/placeholder.png')}" 
+            alt="${p.name}"
+            style="width:100px;height:100px;object-fit:contain;padding:10px;"
+            onerror="this.src='images/placeholder.png'"
+          >
+          <button class="quick-view-btn" data-id="${p._id}">
+            Quick View
+          </button>
+        </div>
+        <div class="product-body">
+          <span class="product-cat">${p.category || ""}</span>
+          <h3 class="product-name">${p.name}</h3>
+          <div class="price-row">
+            <span class="price">₦${Number(p.priceNGN).toLocaleString("en-NG")}</span>
+            <span class="price">GH₵${Number(p.priceGHS).toLocaleString("en-GH", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}</span>
+          </div>
+          ${isLowStock && !isOutOfStock ? `<span style="color:var(--warning);font-size:0.75rem;font-weight:600;">⚠️ Only ${p.stock} left</span>` : ""}
+          <button class="add-cart-btn" data-id="${p._id}" ${isOutOfStock ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+            ${isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+          </button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  attachProductEventListeners();
+}
+
+function attachProductEventListeners() {
+  document.querySelectorAll('.quick-view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.dataset.id;
+      openModal(id);
+    });
+  });
+
+  document.querySelectorAll('.add-cart-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (this.disabled) return;
+      const p = allProducts.find(x => x._id === this.dataset.id);
+      if (p) {
+        addToCart(p.name, 1, {
+          ngn: p.priceNGN,
+          ghs: p.priceGHS
+        });
+      }
+    });
+  });
 }
 
 function renderBundles(){
@@ -869,10 +994,28 @@ function renderBundles(){
       <img src="${b.image}" alt="${b.name}" class="bundle-image">
       <h3>${b.name}</h3>
       <p>${b.desc}</p>
-      <div class="bundle-price"><span class="price">$${b.price}</span><span class="price old">$${b.oldPrice}</span></div>
-      <button class="btn btn-outline light btn-sm btn-block bundle-add">Add to Cart</button>
+      <div class="bundle-price">
+        <span class="price">₦${Number(b.priceNGN).toLocaleString('en-NG')}</span>
+        <span class="price old">₦${Number(b.oldPriceNGN).toLocaleString('en-NG')}</span>
+      </div>
+      <div class="bundle-price" style="margin-top:-8px;">
+        <span class="price">GH₵${Number(b.priceGHS).toLocaleString('en-GH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        <span class="price old">GH₵${Number(b.oldPriceGHS).toLocaleString('en-GH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+      </div>
+      <button class="btn btn-outline light btn-sm btn-block bundle-add" data-name="${b.name}" data-ngn="${b.priceNGN}" data-ghs="${b.priceGHS}">Add to Cart</button>
     </div>`).join('');
-  el.querySelectorAll('.bundle-add').forEach((btn,i)=> btn.addEventListener('click', ()=> addToCart(BUNDLES[i].name, 1)));
+    
+  el.querySelectorAll('.bundle-add').forEach((btn) => {
+    btn.addEventListener('click', function() {
+      const name = this.dataset.name;
+      const priceNGN = Number(this.dataset.ngn);
+      const priceGHS = Number(this.dataset.ghs);
+      addToCart(name, 1, {
+        ngn: priceNGN,
+        ghs: priceGHS
+      });
+    });
+  });
   observeReveals(el);
 }
 
@@ -944,25 +1087,52 @@ function renderFooter(){
   document.getElementById('copyrightLine').textContent = `© ${new Date().getFullYear()} Royal Dynasty Fragrance. All rights reserved.`;
 }
 
-/* ============================================================
-   QUICK VIEW MODAL
-   ============================================================ */
+// ============================================================
+// QUICK VIEW MODAL
+// ============================================================
+
 const backdrop = document.getElementById('modalBackdrop');
 let qty = 1, modalProduct = null, lastFocused = null;
 
-function openModal(id){
-  modalProduct = PRODUCTS.find(p=>p.id===id);
-  if(!modalProduct) return;
+function closeModal() {
+  backdrop.classList.remove('open');
+  document.body.style.overflow = '';
+  if (lastFocused) lastFocused.focus();
+}
+
+function openModal(id) {
+  modalProduct = allProducts.find(p => p._id === id);
+  if (!modalProduct) return;
+
   qty = 1;
   document.getElementById('qtyValue').textContent = qty;
-  document.getElementById('modalIcon').innerHTML = `<use href="#${modalProduct.icon}"/>`;
-  document.getElementById('modalCat').textContent = modalProduct.catLabel;
+  
+  document.getElementById('modalIcon').innerHTML = `
+    <img 
+      src="${modalProduct.image && modalProduct.image.startsWith('http') ? modalProduct.image : (modalProduct.image ? `http://localhost:5000/uploads/${modalProduct.image}` : 'images/placeholder.png')}" 
+      alt="${modalProduct.name}" 
+      style="width:150px;height:150px;object-fit:contain;"
+      onerror="this.src='images/placeholder.png'"
+    >
+  `;
+  
+  document.getElementById('modalCat').textContent = modalProduct.category || '';
   document.getElementById('modalTitle').textContent = modalProduct.name;
-  document.getElementById('modalRating').innerHTML = starIcons(modalProduct.rating) + `<span>${modalProduct.rating} (${modalProduct.reviews} reviews)</span>`;
-  document.getElementById('modalPrice').textContent = '$' + modalProduct.price;
-  document.getElementById('modalOldPrice').textContent = modalProduct.oldPrice ? '$' + modalProduct.oldPrice : '';
-  document.getElementById('modalDesc').textContent = modalProduct.desc;
-  document.getElementById('modalDetails').innerHTML = modalProduct.details.map(d=>`<li>${d}</li>`).join('');
+  document.getElementById('modalRating').innerHTML = `
+    ${starIcons(modalProduct.rating || 0)}
+    <span>${modalProduct.rating || 0} (${modalProduct.reviews || 0} reviews)</span>
+  `;
+
+  document.getElementById('modalPrice').textContent = 
+    `₦${Number(modalProduct.priceNGN).toLocaleString('en-NG')} / GH₵${Number(modalProduct.priceGHS).toLocaleString('en-GH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+
+  document.getElementById('modalOldPrice').textContent = '';
+  document.getElementById('modalDesc').textContent = modalProduct.description || '';
+  document.getElementById('modalDetails').innerHTML = 
+    (modalProduct.details || []).map(d => `<li>${d}</li>`).join('');
 
   lastFocused = document.activeElement;
   backdrop.classList.add('open');
@@ -970,50 +1140,277 @@ function openModal(id){
   document.getElementById('modalClose').focus();
 }
 
-function closeModal(){
-  backdrop.classList.remove('open');
-  document.body.style.overflow = '';
-  if(lastFocused) lastFocused.focus();
-}
-
 document.getElementById('modalClose').addEventListener('click', closeModal);
-backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && backdrop.classList.contains('open')) closeModal(); });
-document.getElementById('qtyMinus').addEventListener('click', ()=>{ qty=Math.max(1,qty-1); document.getElementById('qtyValue').textContent=qty; });
-document.getElementById('qtyPlus').addEventListener('click', ()=>{ qty=Math.min(10,qty+1); document.getElementById('qtyValue').textContent=qty; });
-document.getElementById('modalAddCart').addEventListener('click', ()=>{
-  if(modalProduct){ addToCart(modalProduct.name, qty); closeModal(); }
+backdrop.addEventListener('click', (e) => { 
+  if (e.target === backdrop) closeModal(); 
+});
+document.addEventListener('keydown', (e) => { 
+  if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal(); 
 });
 
-/* ============================================================
-   CART + TOAST (in-memory demo state — connect to Shopify for production)
-   ============================================================ */
-let cartCount = 0;
+document.getElementById('qtyMinus').addEventListener('click', () => {
+  qty = Math.max(1, qty - 1);
+  document.getElementById('qtyValue').textContent = qty;
+});
+
+document.getElementById('qtyPlus').addEventListener('click', () => {
+  qty = Math.min(10, qty + 1);
+  document.getElementById('qtyValue').textContent = qty;
+});
+
+document.getElementById('modalAddCart').addEventListener('click', () => {
+  if (modalProduct) {
+    addToCart(modalProduct.name, qty, {
+      ngn: modalProduct.priceNGN,
+      ghs: modalProduct.priceGHS
+    });
+    closeModal();
+  }
+});
+
+// ============================================================
+// CART SYSTEM
+// ============================================================
+
+let cart = [];
 const cartCountEl = document.getElementById('cartCount');
 const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toastMsg');
 let toastTimer;
 
-function addToCart(name, amount){
-  cartCount += amount;
-  cartCountEl.textContent = cartCount;
-  cartCountEl.classList.remove('bump'); void cartCountEl.offsetWidth; cartCountEl.classList.add('bump');
+function loadCartFromStorage() {
+  try {
+    const saved = localStorage.getItem('cart');
+    if (saved) {
+      cart = JSON.parse(saved).map(item => {
+        return {
+          name: item.name,
+          quantity: Number(item.quantity) || 1,
+          priceNGN: Number(item.priceNGN) || 0,
+          priceGHS: Number(item.priceGHS) || 0
+        };
+      });
+      updateCartCount();
+    }
+  } catch (e) {
+    console.warn('Could not load cart from localStorage:', e);
+    cart = [];
+  }
+}
+
+function saveCartToStorage() {
+  try {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  } catch (e) {
+    console.warn('Could not save cart to localStorage:', e);
+  }
+}
+
+function updateCartCount() {
+  const totalItems = cart.reduce((total, product) => total + (product.quantity || 0), 0);
+  cartCountEl.textContent = totalItems;
+}
+
+function addToCart(name, amount, priceObj) {
+  // Make sure priceObj has both ngn and ghs properties
+  const priceNGN = Number(priceObj?.ngn) || 0;
+  const priceGHS = Number(priceObj?.ghs) || 0;
+
+  console.log(`Adding to cart: ${name}, NGN: ${priceNGN}, GHS: ${priceGHS}`);
+
+  const existingProduct = cart.find(product => product.name === name);
+
+  if (existingProduct) {
+    existingProduct.quantity += amount;
+  } else {
+    cart.push({
+      name: name,
+      quantity: amount,
+      priceNGN: priceNGN,
+      priceGHS: priceGHS
+    });
+  }
+
+  saveCartToStorage();
+  updateCartCount();
+  displayCart();
+
   toastMsg.textContent = `Added "${name}" to cart`;
   toast.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> toast.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+
+  console.log('Current cart:', cart);
 }
 
-document.getElementById('cartBtn').addEventListener('click', ()=>{
-  toastMsg.textContent = cartCount>0 ? `You have ${cartCount} item${cartCount>1?'s':''} in your cart` : 'Your cart is empty';
+function removeFromCart(index) {
+  if (index < 0 || index >= cart.length) return;
+  
+  const itemName = cart[index].name;
+  cart.splice(index, 1);
+  
+  saveCartToStorage();
+  updateCartCount();
+  displayCart();
+  
+  toastMsg.textContent = `Removed "${itemName}" from cart`;
   toast.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> toast.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  
+  console.log('Item removed. Cart now:', cart);
+}
+
+function displayCart() {
+  const cartItems = document.getElementById('cartItems');
+
+  if (cart.length === 0) {
+    cartItems.innerHTML = '<p>Your cart is empty.</p>';
+    document.getElementById('checkoutBtn').disabled = true;
+    return;
+  }
+
+  let totalNGN = 0;
+  let totalGHS = 0;
+  let html = '';
+
+  cart.forEach((product, index) => {
+    const qty = Number(product.quantity) || 1;
+    const priceNGN = Number(product.priceNGN) || 0;
+    const priceGHS = Number(product.priceGHS) || 0;
+
+    const productTotalNGN = priceNGN * qty;
+    const productTotalGHS = priceGHS * qty;
+
+    totalNGN += productTotalNGN;
+    totalGHS += productTotalGHS;
+
+    html += `
+      <div class="cart-item" data-index="${index}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="flex:1;">
+            <strong>${product.name}</strong>
+            <p>Price: ₦${priceNGN.toLocaleString('en-NG')} / GH₵${priceGHS.toLocaleString('en-GH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}</p>
+            <p>Quantity: ${qty}</p>
+            <p>Subtotal: ₦${productTotalNGN.toLocaleString('en-NG')} / GH₵${productTotalGHS.toLocaleString('en-GH', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}</p>
+          </div>
+          <button class="remove-item-btn" data-index="${index}" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            margin-left: 10px;
+          " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            ×
+          </button>
+        </div>
+      </div>
+      <hr>
+    `;
+  });
+
+  html += `
+    <div class="cart-total">
+      Total: ₦${totalNGN.toLocaleString('en-NG')} / GH₵${totalGHS.toLocaleString('en-GH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}
+    </div>
+  `;
+
+  cartItems.innerHTML = html;
+
+  // Add event listeners to all remove buttons
+  document.querySelectorAll('.remove-item-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = parseInt(this.dataset.index);
+      removeFromCart(index);
+    });
+  });
+
+  document.getElementById('checkoutBtn').disabled = false;
+}
+
+// ============================================================
+// CART PANEL
+// ============================================================
+
+function clearCart() {
+  if (cart.length === 0) return;
+  if (confirm('Are you sure you want to remove all items from your cart?')) {
+    cart = [];
+    saveCartToStorage();
+    updateCartCount();
+    displayCart();
+    toastMsg.textContent = 'Cart cleared';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+}
+
+// Add event listener for clear cart button
+document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+
+const cartPanel = document.getElementById('cartPanel');
+const closeCartBtn = document.getElementById('closeCart');
+
+document.getElementById('cartBtn').addEventListener('click', () => {
+  const savedUser = localStorage.getItem('user');
+
+  if (!savedUser) {
+    alert('Please create an account or log in before placing an order.');
+    window.location.href = 'deepseek_html_20260724_c26252.html';
+    return;
+  }
+
+  displayCart();
+  cartPanel.classList.add('open');
 });
 
-/* ============================================================
-   NEWSLETTER FORM
-   ============================================================ */
+closeCartBtn.addEventListener('click', () => {
+  cartPanel.classList.remove('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (cartPanel.classList.contains('open')) {
+    const isClickInside = cartPanel.contains(e.target);
+    const isCartBtn = e.target.closest('#cartBtn');
+    if (!isClickInside && !isCartBtn) {
+      cartPanel.classList.remove('open');
+    }
+  }
+});
+
+document.getElementById('checkoutBtn').addEventListener('click', () => {
+  if (cart.length === 0) {
+    alert('Your cart is empty.');
+    return;
+  }
+
+  saveCartToStorage();
+  window.location.href = 'checkout.html';
+});
+
+// ============================================================
+// NEWSLETTER FORM
+// ============================================================
+
 document.getElementById('newsletterForm').addEventListener('submit', function(e){
   e.preventDefault();
   const input = document.getElementById('newsletterEmail');
@@ -1029,9 +1426,10 @@ document.getElementById('newsletterForm').addEventListener('submit', function(e)
   }
 });
 
-/* ============================================================
-   HEADER SCROLL + MOBILE NAV
-   ============================================================ */
+// ============================================================
+// HEADER SCROLL + MOBILE NAV
+// ============================================================
+
 const header = document.getElementById('siteHeader');
 window.addEventListener('scroll', ()=>{
   header.classList.toggle('scrolled', window.scrollY > 40);
@@ -1046,17 +1444,50 @@ navToggle.addEventListener('click', openNav);
 navClose.addEventListener('click', closeNav);
 mainNav.querySelectorAll('.nav-link').forEach(a=> a.addEventListener('click', closeNav));
 
-/* ============================================================
-   INIT
-   ============================================================ */
-renderCategories();
-renderFilterTabs();
-renderProducts();
-renderBundles();
-renderTestimonials();
-renderStores();
-renderFooter();
-observeReveals(document);
+// ============================================================
+// ACCOUNT / LOGOUT
+// ============================================================
+
+const savedUser = localStorage.getItem('user');
+
+if (savedUser) {
+  try {
+    const user = JSON.parse(savedUser);
+    const accountLink = document.getElementById('accountLink');
+
+    if (accountLink) {
+      accountLink.textContent = `Welcome, ${user.username || 'User'} | Logout`;
+      accountLink.href = '#';
+
+      accountLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        localStorage.removeItem('user');
+        window.location.href = 'deepseek_html_20260724_c26252.html';
+      });
+    }
+  } catch (e) {
+    console.warn('Could not parse user data:', e);
+    localStorage.removeItem('user');
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', async function() {
+  renderCategories();
+  renderFilterTabs();
+  await renderProducts();
+  renderBundles();
+  renderTestimonials();
+  renderStores();
+  renderFooter();
+  observeReveals(document);
+  loadCartFromStorage();
+  displayCart();
+  console.log('Royal Dynasty Fragrance — fully loaded with database products!');
+});
 </script>
 </body>
 </html>

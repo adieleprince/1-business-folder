@@ -35,10 +35,10 @@ const registerUser = async (req, res) => {
         res.status(201).json({
             message: "User registered",
             user: {
-                id: user._id,
-                email: user.email,
-                username: user.username
-            }
+  id: user._id,
+  username: user.username,
+  email: user.email
+}
         });
 
     } catch (error) {
@@ -88,10 +88,10 @@ const loginUser = async (req, res) => {
         res.status(200).json({
             message: "User logged in",
             user: {
-                id: user._id,
-                email: user.email,
-                username: user.username
-            }
+  id: user._id,
+  username: user.username,
+  email: user.email
+}
         });
 
     } catch (error) {
