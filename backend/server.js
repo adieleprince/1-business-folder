@@ -3,7 +3,6 @@ dotenv.config();
 
 import connectDB from "./src/config/database.js";
 import app from "./src/app.js";
-import bcrypt from "bcryptjs"; // <--- Add this import
 import User from "./src/models/user.model.js";
 
 const PORT = process.env.PORT || 5000;
@@ -13,27 +12,34 @@ const startServer = async () => {
         // 1. Connect to the database
         await connectDB();
 
-        // 2. Create the specific admin user (Only runs if they don't exist)
+        // 2. Create the admin user from environment variables (only runs if they don't exist yet)
         const createAdmin = async () => {
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const adminPassword = process.env.ADMIN_PASSWORD;
+
+            if (!adminEmail || !adminPassword) {
+                console.warn("⚠️  ADMIN_EMAIL / ADMIN_PASSWORD not set in .env — skipping automatic admin account setup.");
+                return;
+            }
+
             try {
                 // Check if the user already exists in the database
-                const existingAdmin = await User.findOne({ email: "royaldynastyfragrances@gmail.com" });
-                
-                if (!existingAdmin) {
-                    // Hash the password from the .env file (Adiele3566)
-                    const salt = await bcrypt.genSalt(10);
-                    const hashedPassword = await bcrypt.hash("Adiele3566", 10);
+                const normalizedEmail = adminEmail.toLowerCase().trim();
+                const existingAdmin = await User.findOne({ email: normalizedEmail });
 
-                    // Create the new admin with your requested details
+                if (!existingAdmin) {
+                    // ADMIN_USERNAME is optional — falls back to the part of the email before the "@"
+                    const adminUsername = process.env.ADMIN_USERNAME || normalizedEmail.split("@")[0];
+
                     const newAdmin = new User({
-                        username: "royaldynastyfragrances",
-                        email: "royaldynastyfragrances@gmail.com",
-                        password: hashedPassword,
+                        username: adminUsername,
+                        email: adminEmail,
+                        password: adminPassword,
                         isAdmin: true
                     });
 
                     await newAdmin.save();
-                    console.log(`✅ Admin user successfully created: royaldynastyfragrances@gmail.com`);
+                    console.log(`✅ Admin user successfully created: ${normalizedEmail}`);
                 } else {
                     console.log(`ℹ️ Admin user already exists. Skipping creation.`);
                 }

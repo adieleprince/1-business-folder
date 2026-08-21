@@ -635,6 +635,7 @@
 
   </div>
 
+  <script src="config.js"></script>
   <script>
     'use strict';
 
@@ -911,7 +912,7 @@
       placeOrderBtn.textContent = 'Starting Payment...';
 
       try {
-        const response = await fetch('http://localhost:5000/api/v1/payments/initialize', {
+        const response = await fetch(`${window.API_BASE_URL}/payments/initialize`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1017,7 +1018,7 @@ document.getElementById("ghanaPaidBtn").onclick = async function () {
   try {
     console.log('SENDING GHANA PAYMENT TO BACKEND...');
     
-    const response = await fetch('http://localhost:5000/api/v1/ghana-payment', {
+    const response = await fetch(`${window.API_BASE_URL}/ghana-payment`, {
       method: 'POST',
       body: formData
     });

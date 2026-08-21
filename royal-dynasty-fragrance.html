@@ -747,6 +747,7 @@
   <button id="checkoutBtn" class="btn btn-primary" type="button">Checkout</button>
 </div>
 
+<script src="config.js"></script>
 <script>
 'use strict';
 
@@ -831,7 +832,7 @@ let allProducts = [];
 
 async function fetchProducts() {
   try {
-    const response = await fetch("http://localhost:5000/api/v1/products");
+    const response = await fetch(`${window.API_BASE_URL}/products`);
     if (!response.ok) {
       throw new Error("Failed to load products");
     }
@@ -933,7 +934,7 @@ async function renderProducts() {
           ${p.tag ? `<span class="product-tag">${p.tag}</span>` : ""}
           ${isOutOfStock ? `<span class="product-tag" style="background:var(--danger);">Out of Stock</span>` : ""}
           <img 
-            src="${p.image && p.image.startsWith('http') ? p.image : (p.image ? `http://localhost:5000/uploads/${p.image}` : 'images/placeholder.png')}" 
+            src="${p.image && p.image.startsWith('http') ? p.image : (p.image ? `${window.UPLOADS_BASE_URL}/${p.image}` : 'images/placeholder.png')}" 
             alt="${p.name}"
             style="width:100px;height:100px;object-fit:contain;padding:10px;"
             onerror="this.src='images/placeholder.png'"
@@ -1109,7 +1110,7 @@ function openModal(id) {
   
   document.getElementById('modalIcon').innerHTML = `
     <img 
-      src="${modalProduct.image && modalProduct.image.startsWith('http') ? modalProduct.image : (modalProduct.image ? `http://localhost:5000/uploads/${modalProduct.image}` : 'images/placeholder.png')}" 
+      src="${modalProduct.image && modalProduct.image.startsWith('http') ? modalProduct.image : (modalProduct.image ? `${window.UPLOADS_BASE_URL}/${modalProduct.image}` : 'images/placeholder.png')}" 
       alt="${modalProduct.name}" 
       style="width:150px;height:150px;object-fit:contain;"
       onerror="this.src='images/placeholder.png'"

@@ -1217,6 +1217,7 @@
     <span id="toastMsg">Action completed</span>
   </div>
 
+  <script src="config.js"></script>
   <script>
     // ============================================================
 // ADMIN DASHBOARD - DATABASE VERSION
@@ -1254,7 +1255,7 @@
 // API BASE URL
 // ============================================================
 
-const API_BASE = 'http://localhost:5000/api/v1';
+const API_BASE = window.API_BASE_URL;
 
 // ============================================================
 // DATA
@@ -1430,7 +1431,7 @@ async function renderProducts() {
     <tr>
       <td>
         <img 
-          src="${p.image ? `http://localhost:5000/uploads/${p.image}` : 'images/placeholder.png'}" 
+          src="${p.image ? `${window.UPLOADS_BASE_URL}/${p.image}` : 'images/placeholder.png'}" 
           alt="${p.name}" 
           class="product-thumb" 
           onerror="this.src='images/placeholder.png'"
@@ -1594,7 +1595,7 @@ async function openEditProduct(id) {
     
     const preview = document.getElementById('productImagePreview');
     if (product.image) {
-      preview.src = `http://localhost:5000/uploads/${product.image}`;
+      preview.src = `${window.UPLOADS_BASE_URL}/${product.image}`;
       preview.style.display = 'block';
     } else {
       preview.style.display = 'none';
@@ -1799,7 +1800,7 @@ function viewReceipt(orderId) {
     return;
   }
 
-  const receiptUrl = `http://localhost:5000/uploads/${order.receipt}`;
+  const receiptUrl = `${window.UPLOADS_BASE_URL}/${order.receipt}`;
   const filename = order.receiptOriginalName || order.receipt;
 
   const content = document.getElementById('receiptViewerContent');
