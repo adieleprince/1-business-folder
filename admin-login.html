@@ -405,7 +405,26 @@
   <script>
     'use strict';
 
-   
+    // ============================================================
+    // JWT HELPERS
+    // ============================================================
+    function decodeJwtPayload(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+        return JSON.parse(atob(padded));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function isTokenValid(token) {
+      const payload = decodeJwtPayload(token);
+      if (!payload || !payload.exp) return false;
+      return Date.now() < payload.exp * 1000;
+    }
+
     // ============================================================
     // DOM REFS
     // ============================================================
@@ -515,6 +534,12 @@
       );
     }
 
+    // Only admin accounts may use this dashboard, even if the
+    // email/password combination is valid for a regular customer.
+    if (!data.user || !data.user.isAdmin) {
+      throw new Error('This account does not have admin access.');
+    }
+
     // LOGIN SUCCESSFUL
     loginAttempts = 0;
 
@@ -523,15 +548,10 @@
       'success'
     );
 
-    // Store admin session
-    localStorage.setItem(
-      'adminSession',
-      JSON.stringify({
-        email: email,
-        loggedIn: true,
-        timestamp: Date.now()
-      })
-    );
+    // Store the real JWT issued by the backend — this is what
+    // authorizes every admin API request from now on.
+    localStorage.setItem('adminToken', data.token);
+    localStorage.setItem('adminUser', JSON.stringify(data.user));
 
     loginText.innerHTML =
       '<span class="spinner"></span> Logging in...';
@@ -607,25 +627,22 @@
     // ============================================================
     (function checkExistingSession() {
       try {
-        const session = localStorage.getItem('adminSession');
-        if (session) {
-          const data = JSON.parse(session);
-          // Check if session is less than 24 hours old
-          const age = Date.now() - data.timestamp;
-          const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-
-          if (data.loggedIn && age < maxAge) {
-            // Session is valid, redirect to dashboard
+        const token = localStorage.getItem('adminToken');
+        const userRaw = localStorage.getItem('adminUser');
+        if (token && userRaw && isTokenValid(token)) {
+          const user = JSON.parse(userRaw);
+          if (user && user.isAdmin) {
+            // Token is still valid, go straight to the dashboard
             window.location.href = 'admin-dashboard.html';
             return;
-          } else if (data.loggedIn && age >= maxAge) {
-            // Session expired, clear it
-            localStorage.removeItem('adminSession');
           }
         }
+        // Missing, expired, or non-admin — clear any stale session
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
       } catch (e) {
-        // Invalid session data, clear it
-        localStorage.removeItem('adminSession');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
       }
     })();
 
@@ -661,7 +678,8 @@
     // ============================================================
     // Uncomment below if you want to clear session on tab close
     // window.addEventListener('beforeunload', function() {
-    //   // localStorage.removeItem('adminSession');
+    //   // localStorage.removeItem('adminToken');
+    //   // localStorage.removeItem('adminUser');
     // });
   </script>
 

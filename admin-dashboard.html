@@ -1226,28 +1226,54 @@
 'use strict';
 
 // ============================================================
+// JWT HELPERS
+// ============================================================
+
+function decodeJwtPayload(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    return JSON.parse(atob(padded));
+  } catch (e) {
+    return null;
+  }
+}
+
+function isTokenValid(token) {
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return false;
+  return Date.now() < payload.exp * 1000;
+}
+
+function clearAdminSession() {
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('adminUser');
+}
+
+// ============================================================
 // PROTECTION
 // ============================================================
 
 (function protectAdminDashboard() {
-  const session = localStorage.getItem('adminSession');
-  if (!session) {
+  const token = localStorage.getItem('adminToken');
+  const userRaw = localStorage.getItem('adminUser');
+
+  if (!token || !userRaw || !isTokenValid(token)) {
+    clearAdminSession();
     window.location.href = 'admin-login.html';
     return;
   }
+
   try {
-    const data = JSON.parse(session);
-    const age = Date.now() - data.timestamp;
-    const maxAge = 24 * 60 * 60 * 1000;
-    if (!data.loggedIn || age >= maxAge) {
-      localStorage.removeItem('adminSession');
+    const user = JSON.parse(userRaw);
+    if (!user || !user.isAdmin) {
+      clearAdminSession();
       window.location.href = 'admin-login.html';
-      return;
     }
   } catch (error) {
-    localStorage.removeItem('adminSession');
+    clearAdminSession();
     window.location.href = 'admin-login.html';
-    return;
   }
 })();
 
@@ -1256,6 +1282,30 @@
 // ============================================================
 
 const API_BASE = window.API_BASE_URL;
+
+// ============================================================
+// AUTHENTICATED FETCH
+// Attaches the admin's JWT to every protected API call and
+// bounces back to the login page if the backend rejects it
+// (expired/invalid token, or not an admin).
+// ============================================================
+
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('adminToken');
+  const headers = Object.assign({}, options.headers, {
+    Authorization: `Bearer ${token}`
+  });
+
+  const response = await fetch(url, Object.assign({}, options, { headers }));
+
+  if (response.status === 401 || response.status === 403) {
+    clearAdminSession();
+    window.location.href = 'admin-login.html';
+    throw new Error('Session expired. Please log in again.');
+  }
+
+  return response;
+}
 
 // ============================================================
 // DATA
@@ -1321,7 +1371,7 @@ function showToast(message, isError = false) {
 
 async function loadProducts() {
   try {
-    const response = await fetch(`${API_BASE}/products/all`);
+    const response = await apiFetch(`${API_BASE}/products/all`);
     if (!response.ok) throw new Error('Failed to load products');
     const data = await response.json();
     products = data;
@@ -1335,7 +1385,7 @@ async function loadProducts() {
 
 async function loadOrders() {
   try {
-    const response = await fetch(`${API_BASE}/orders`);
+    const response = await apiFetch(`${API_BASE}/orders`);
     if (!response.ok) throw new Error('Failed to load orders');
     const data = await response.json();
     orders = data.orders || [];
@@ -1576,7 +1626,7 @@ async function renderInventory() {
 
 async function openEditProduct(id) {
   try {
-    const response = await fetch(`${API_BASE}/products/${id}`);
+    const response = await apiFetch(`${API_BASE}/products/${id}`);
     if (!response.ok) throw new Error('Failed to load product');
     const product = await response.json();
     
@@ -1611,7 +1661,7 @@ async function openEditProduct(id) {
 async function deleteProduct(id) {
   if (!confirm('Are you sure you want to delete this product permanently?')) return;
   try {
-    const response = await fetch(`${API_BASE}/products/${id}`, {
+    const response = await apiFetch(`${API_BASE}/products/${id}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete product');
@@ -1627,7 +1677,7 @@ async function deleteProduct(id) {
 
 async function toggleProductStatus(id, newStatus) {
   try {
-    const response = await fetch(`${API_BASE}/products/${id}/status`, {
+    const response = await apiFetch(`${API_BASE}/products/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ active: newStatus })
@@ -1678,7 +1728,7 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
   const method = editingProductId ? 'PUT' : 'POST';
   
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: method,
       body: formData
     });
@@ -1706,7 +1756,7 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
 
 async function updateOrderStatus(orderId, newStatus) {
   try {
-    const response = await fetch(`${API_BASE}/orders/${orderId}`, {
+    const response = await apiFetch(`${API_BASE}/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
@@ -1724,7 +1774,7 @@ async function updateOrderStatus(orderId, newStatus) {
 async function deleteOrder(orderId) {
   if (!confirm('Delete this order permanently? This cannot be undone.')) return;
   try {
-    const response = await fetch(`${API_BASE}/orders/${orderId}`, {
+    const response = await apiFetch(`${API_BASE}/orders/${orderId}`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete order');
@@ -1843,7 +1893,7 @@ document.getElementById('addProductBtn')?.addEventListener('click', function() {
 document.getElementById('deleteAllTestOrdersBtn')?.addEventListener('click', async function() {
   if (!confirm('Delete ALL orders in the database? This cannot be undone.')) return;
   try {
-    const response = await fetch(`${API_BASE}/orders`, {
+    const response = await apiFetch(`${API_BASE}/orders`, {
       method: 'DELETE'
     });
     if (!response.ok) throw new Error('Failed to delete orders');
@@ -1967,7 +2017,7 @@ document.getElementById('currencyFilter')?.addEventListener('change', function()
 
 document.getElementById('adminLogout')?.addEventListener('click', function(e) {
   e.preventDefault();
-  localStorage.removeItem('adminSession');
+  clearAdminSession();
   window.location.href = 'admin-login.html';
 });
 

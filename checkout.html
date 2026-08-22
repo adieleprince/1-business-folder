@@ -1076,10 +1076,53 @@ document.getElementById("continueShoppingBtn").onclick = function () {
 };
 
     // ============================================================
+    // HANDLE RETURN FROM PAYSTACK
+    // ============================================================
+    // Paystack redirects the customer back to this page with a
+    // ?reference=... (and ?trxref=...) query param after checkout.
+    // The backend — never the URL/frontend — decides whether the
+    // payment actually succeeded.
+    function handlePaystackReturn() {
+      const params = new URLSearchParams(window.location.search);
+      const reference = params.get('reference') || params.get('trxref');
+
+      if (!reference) return;
+
+      // Strip the query string so refreshing the page doesn't re-trigger this.
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      placeOrderBtn.disabled = true;
+      placeOrderBtn.textContent = 'Verifying payment...';
+
+      fetch(`${window.API_BASE_URL}/payments/verify/${encodeURIComponent(reference)}`)
+        .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+          if (ok && data.success && data.order) {
+            const successModal = document.getElementById('paymentSuccessModal');
+            document.getElementById('successEmail').textContent = data.order.email || '';
+            successModal.style.display = 'flex';
+          } else {
+            toast.textContent = (data && data.message) || 'We could not confirm your payment. Please contact us if you were charged.';
+            toast.className = 'toast-message error show';
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.textContent = 'Place Order';
+          }
+        })
+        .catch((error) => {
+          console.error('PAYSTACK RETURN VERIFY ERROR:', error);
+          toast.textContent = 'We could not confirm your payment. Please contact us if you were charged.';
+          toast.className = 'toast-message error show';
+          placeOrderBtn.disabled = false;
+          placeOrderBtn.textContent = 'Place Order';
+        });
+    }
+
+    // ============================================================
     // INIT
     // ============================================================
     loadCartFromStorage();
     renderCart();
+    handlePaystackReturn();
 
     console.log('Checkout page loaded!');
   </script>
