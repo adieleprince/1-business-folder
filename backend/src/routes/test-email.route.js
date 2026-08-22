@@ -1,10 +1,10 @@
 import express from 'express';
 import resend from '../config/email.js';
+import { authenticate, requireAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
-    console.log("GET /api/v1/orders WAS CALLED");
+router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
     const { data, error } = await resend.emails.send({
       from: 'onboarding@resend.dev',

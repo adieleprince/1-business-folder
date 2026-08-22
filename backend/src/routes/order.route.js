@@ -2,6 +2,7 @@ import express from "express";
 import Order from "../models/order.model.js";
 import { sendOrderEmail } from "../config/email.js";
 import { resolveOrderItems } from "../utils/orderPricing.js";
+import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import {
   orderConfirmationEmail,
   paymentVerifiedEmail,
@@ -19,10 +20,10 @@ function makeManualOrderId() {
 }
 
 // =========================================
-// GET ALL ORDERS
+// GET ALL ORDERS — admin only (contains customer PII)
 // =========================================
 
-router.get("/", async (req, res) => {
+router.get("/", authenticate, requireAdmin, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.status(200).json({
@@ -40,13 +41,13 @@ router.get("/", async (req, res) => {
 });
 
 // =========================================
-// CREATE ORDER (manual/generic — not used by the Paystack or Ghana
-// checkout flows, which create their own orders directly. Kept for any
-// other order-creation path, but hardened the same way: items are priced
-// from our own product/bundle catalog, never trusted from the client.)
+// CREATE ORDER (manual/admin-only — not used by the Paystack or Ghana
+// checkout flows, which create their own orders directly through their
+// own public routes. Hardened the same way: items are priced from our
+// own product/bundle catalog, never trusted from the client.)
 // =========================================
 
-router.post("/", async (req, res) => {
+router.post("/", authenticate, requireAdmin, async (req, res) => {
   try {
     const { customerName, phone, email, address, currency, items, paymentMethod, status } = req.body;
 
@@ -106,10 +107,10 @@ router.post("/", async (req, res) => {
 });
 
 // =========================================
-// UPDATE ORDER STATUS
+// UPDATE ORDER STATUS — admin only
 // =========================================
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", authenticate, requireAdmin, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -179,10 +180,10 @@ router.patch("/:id", async (req, res) => {
 });
 
 // =========================================
-// DELETE ORDER
+// DELETE ORDER — admin only
 // =========================================
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticate, requireAdmin, async (req, res) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) {
@@ -199,10 +200,10 @@ router.delete("/:id", async (req, res) => {
 });
 
 // =========================================
-// DELETE ALL ORDERS
+// DELETE ALL ORDERS — admin only
 // =========================================
 
-router.delete("/", async (req, res) => {
+router.delete("/", authenticate, requireAdmin, async (req, res) => {
   try {
     await Order.deleteMany({});
     res.status(200).json({ message: "All orders deleted successfully" });

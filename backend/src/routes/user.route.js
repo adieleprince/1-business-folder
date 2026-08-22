@@ -48,10 +48,7 @@ router.post('/register', async (req, res) => {
 });
 
 // =============================================
-// LOGIN ROUTE (100% Secure)
-// =============================================
-// =============================================
-// LOGIN ROUTE (DEBUG MODE)
+// LOGIN ROUTE
 // =============================================
 router.post('/login', async (req, res) => {
   try {
@@ -64,27 +61,13 @@ router.post('/login', async (req, res) => {
 
     // 1. Search database
     const user = await User.findOne({ email });
-    
+
     if (!user) {
-      console.log(`❌ User not found for email: ${email}`);
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    console.log("=========================================");
-    console.log(`✅ User found: ${user.email}`);
-    console.log(`🔑 Input password: "${password}"`);
-    console.log(`🔒 Stored hash: ${user.password}`);
-
     // 2. Compare passwords
-    let isPasswordValid = false;
-    try {
-      isPasswordValid = await bcrypt.compare(password, user.password);
-    } catch (err) {
-      console.error("🔥 BCRYPT CRASHED:", err.message);
-    }
-
-    console.log(`✅ bcrypt.compare result: ${isPasswordValid}`);
-    console.log("=========================================");
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -93,7 +76,7 @@ router.post('/login', async (req, res) => {
     // 3. Generate JWT Token
     const token = jwt.sign(
       { userId: user._id, email: user.email, isAdmin: user.isAdmin },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 

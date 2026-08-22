@@ -1,8 +1,12 @@
 import express from "express";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
+import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// Every route in this file is admin-only.
+router.use(authenticate, requireAdmin);
 
 // =========================================
 // ADMIN DASHBOARD STATISTICS
