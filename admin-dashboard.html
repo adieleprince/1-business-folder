@@ -993,10 +993,12 @@
             </div>
             <select id="orderFilter" style="padding:0.4rem 1rem;border-radius:999px;border:1.5px solid var(--line);font-family:var(--font-body);font-size:0.8rem;background:var(--white);">
               <option value="all">All Status</option>
+              <option value="Pending Payment">Pending Payment</option>
               <option value="Pending Verification">Pending Verification</option>
               <option value="Paid">Paid</option>
               <option value="Completed">Completed</option>
               <option value="Cancelled">Cancelled</option>
+              <option value="Failed">Failed</option>
             </select>
             <button class="btn btn-outline btn-sm" id="deleteAllTestOrdersBtn" style="color:var(--danger);border-color:var(--danger);">🧹 Delete All Test Orders</button>
           </div>
@@ -1344,9 +1346,11 @@ function getCurrencyBadge(currency) {
 function getStatusBadge(status) {
   const classes = {
     'Pending Verification': 'pending',
+    'Pending Payment': 'pending',
     'Paid': 'paid',
     'Completed': 'completed',
-    'Cancelled': 'cancelled'
+    'Cancelled': 'cancelled',
+    'Failed': 'cancelled'
   };
   return `<span class="status-badge ${classes[status] || 'pending'}">${status || 'Pending Verification'}</span>`;
 }
@@ -1409,7 +1413,13 @@ async function renderDashboard() {
   let revenueGHS = 0;
 
   orders.forEach(order => {
-    const orderTotal = getOrderTotal(order);
+    // Only orders that were actually paid should count as revenue —
+    // Pending/Cancelled/Failed orders never had money change hands.
+    if (order.status !== 'Paid' && order.status !== 'Completed') return;
+
+    // Use the authoritative total stored on the order at purchase time,
+    // never a recalculation from current (possibly since-changed) product prices.
+    const orderTotal = Number(order.amount) || 0;
     const currency = getOrderCurrency(order);
     if (currency === 'GHS') {
       revenueGHS += orderTotal;
@@ -1575,9 +1585,13 @@ function renderCustomers() {
     const c = byEmail[o.email];
     c.orderCount++;
     if (new Date(o.createdAt) < new Date(c.firstOrder)) c.firstOrder = o.createdAt;
-    const currency = getOrderCurrency(o);
-    const total = getOrderTotal(o);
-    if (currency === 'GHS') c.spentGHS += total; else c.spentNGN += total;
+    // "Total Spent" should only reflect money actually paid — the same
+    // rule as the dashboard revenue cards.
+    if (o.status === 'Paid' || o.status === 'Completed') {
+      const currency = getOrderCurrency(o);
+      const total = Number(o.amount) || 0;
+      if (currency === 'GHS') c.spentGHS += total; else c.spentNGN += total;
+    }
   });
 
   const derivedCustomers = Object.values(byEmail);

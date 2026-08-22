@@ -620,9 +620,11 @@
 
       <p>
         Your order has been received. A confirmation email will be sent to
-        <span id="successEmail" style="font-weight:bold;color:#8B6B3D;"></span>
-        once your receipt has been verified.
+        <span id="successEmail" style="font-weight:bold;color:#8B6B3D;"></span>.
       </p>
+
+      <p id="successNote" style="color:var(--ink-soft);font-size:0.9rem;"></p>
+      <p id="successOrderId" style="font-size:0.85rem;color:var(--ink-soft);margin-top:4px;"></p>
 
       <button
     id="continueShoppingBtn"
@@ -937,8 +939,6 @@
 
     console.error("FULL ERROR:", error);
 
-    alert(error.message);
-
         toast.textContent = error.message || 'Could not start payment. Please try again.';
         toast.className = 'toast-message error show';
         placeOrderBtn.disabled = false;
@@ -1042,6 +1042,8 @@ document.getElementById("ghanaPaidBtn").onclick = async function () {
     console.log("Reached success popup");
     const successModal = document.getElementById("paymentSuccessModal");
     document.getElementById("successEmail").textContent = email;
+    document.getElementById("successNote").textContent = "We'll email you again once your payment has been verified.";
+    document.getElementById("successOrderId").textContent = result.order && result.order.orderId ? `Order reference: ${result.order.orderId}` : '';
     successModal.style.display="flex";
 
     // Wait for user to click Continue Shopping button
@@ -1100,6 +1102,8 @@ document.getElementById("continueShoppingBtn").onclick = function () {
           if (ok && data.success && data.order) {
             const successModal = document.getElementById('paymentSuccessModal');
             document.getElementById('successEmail').textContent = data.order.email || '';
+            document.getElementById('successNote').textContent = 'Your payment has been confirmed.';
+            document.getElementById('successOrderId').textContent = data.order.orderId ? `Order reference: ${data.order.orderId}` : '';
             successModal.style.display = 'flex';
           } else {
             toast.textContent = (data && data.message) || 'We could not confirm your payment. Please contact us if you were charged.';
