@@ -7,6 +7,13 @@ const orderSchema = new mongoose.Schema(
       required: true,
       unique: true
     },
+    // The gateway transaction reference this order is tied to (Paystack
+    // reference for card/bank payments). Null for Ghana mobile money orders,
+    // which don't have a gateway reference.
+    paymentReference: {
+      type: String,
+      default: null
+    },
     customerName: {
       type: String,
       required: true
@@ -46,15 +53,28 @@ const orderSchema = new mongoose.Schema(
     },
     receipt: String,
     receiptOriginalName: String,
+    // Consistent status set used across the app:
+    //   Pending Payment       — Paystack order created, awaiting checkout completion
+    //   Pending Verification  — Ghana receipt submitted, awaiting admin review
+    //   Paid                  — payment confirmed (Paystack-verified or admin-verified)
+    //   Completed             — order fulfilled
+    //   Cancelled             — order cancelled
+    //   Failed                — payment attempt failed/was not verified
+    // "Verified", "Processing", and "Delivered" are kept only so existing
+    // historical order documents remain valid — no new order is written
+    // with these values.
     status: {
       type: String,
       enum: [
+        "Pending Payment",
         "Pending Verification",
+        "Paid",
         "Verified",
         "Processing",
         "Delivered",
         "Completed",
-        "Cancelled"
+        "Cancelled",
+        "Failed"
       ],
       default: "Pending Verification"
     }

@@ -11,11 +11,12 @@ const router = express.Router();
 router.get("/stats", async (req, res) => {
   try {
     const totalOrders = await Order.countDocuments();
+    const pendingPaymentOrders = await Order.countDocuments({ status: "Pending Payment" });
     const pendingOrders = await Order.countDocuments({ status: "Pending Verification" });
-    const verifiedOrders = await Order.countDocuments({ status: "Verified" });
-    const deliveredOrders = await Order.countDocuments({ status: "Delivered" });
+    const paidOrders = await Order.countDocuments({ status: "Paid" });
     const completedOrders = await Order.countDocuments({ status: "Completed" });
     const cancelledOrders = await Order.countDocuments({ status: "Cancelled" });
+    const failedOrders = await Order.countDocuments({ status: "Failed" });
 
     const totalProducts = await Product.countDocuments();
     const activeProducts = await Product.countDocuments({ active: true });
@@ -27,11 +28,12 @@ router.get("/stats", async (req, res) => {
       data: {
         orders: {
           total: totalOrders,
+          pendingPayment: pendingPaymentOrders,
           pending: pendingOrders,
-          verified: verifiedOrders,
-          delivered: deliveredOrders,
+          paid: paidOrders,
           completed: completedOrders,
-          cancelled: cancelledOrders
+          cancelled: cancelledOrders,
+          failed: failedOrders
         },
         products: {
           total: totalProducts,
@@ -56,7 +58,7 @@ router.get("/recent-orders", async (req, res) => {
     const orders = await Order.find()
       .sort({ createdAt: -1 })
       .limit(10);
-    
+
     res.json({
       success: true,
       orders: orders

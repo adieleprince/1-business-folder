@@ -1,6 +1,7 @@
 import express from "express";
 import Order from "../models/order.model.js";
 import { sendOrderEmail } from "../config/email.js";
+import { resolveOrderItems } from "../utils/orderPricing.js";
 import {
   orderConfirmationEmail,
   paymentVerifiedEmail,
@@ -10,6 +11,12 @@ import {
 } from "../email-templates/index.js";
 
 const router = express.Router();
+
+const MANUAL_ORDER_STATUSES = ["Pending Verification", "Paid", "Completed", "Cancelled"];
+
+function makeManualOrderId() {
+  return `rdfm_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
 
 // =========================================
 // GET ALL ORDERS
@@ -33,23 +40,52 @@ router.get("/", async (req, res) => {
 });
 
 // =========================================
-// CREATE ORDER
+// CREATE ORDER (manual/generic — not used by the Paystack or Ghana
+// checkout flows, which create their own orders directly. Kept for any
+// other order-creation path, but hardened the same way: items are priced
+// from our own product/bundle catalog, never trusted from the client.)
 // =========================================
 
 router.post("/", async (req, res) => {
   try {
-    const order = await Order.create(req.body);
-    
-    console.log("NEW ORDER SAVED TO DATABASE:", order);
+    const { customerName, phone, email, address, currency, items, paymentMethod, status } = req.body;
+
+    if (!customerName || !phone || !email || !address) {
+      return res.status(400).json({
+        message: "customerName, phone, email, and address are required."
+      });
+    }
+
+    const pricing = await resolveOrderItems(items, currency);
+    if (!pricing.ok) {
+      return res.status(400).json({ message: pricing.message });
+    }
+
+    const safeStatus = MANUAL_ORDER_STATUSES.includes(status) ? status : "Pending Verification";
+
+    const order = await Order.create({
+      orderId: makeManualOrderId(),
+      customerName,
+      phone,
+      email,
+      address,
+      items: pricing.items,
+      amount: pricing.amount,
+      currency: pricing.currency,
+      paymentMethod: paymentMethod || "Manual",
+      status: safeStatus
+    });
+
+    console.log("NEW ORDER SAVED TO DATABASE:", order._id);
 
     // Send order confirmation to customer + admin
     try {
-      const email = orderConfirmationEmail(order);
+      const emailContent = orderConfirmationEmail(order);
       await sendOrderEmail({
         to: order.email,
-        subject: email.subject,
-        html: email.html,
-        adminSubject: `[NEW ORDER] ${email.subject}`
+        subject: emailContent.subject,
+        html: emailContent.html,
+        adminSubject: `[NEW ORDER] ${emailContent.subject}`
       });
     } catch (emailError) {
       console.error("ORDER CONFIRMATION EMAIL ERROR:", emailError);
@@ -76,11 +112,11 @@ router.post("/", async (req, res) => {
 router.patch("/:id", async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
       { status },
-      { returnDocument: 'after' }
+      { new: true, runValidators: true }
     );
 
     if (!updatedOrder) {

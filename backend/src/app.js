@@ -40,7 +40,7 @@ app.get("/", (req, res) => {
 // Error handling middleware for multer errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'FILE_TOO_LARGE') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
         message: 'File too large. Maximum size is 5MB.'
