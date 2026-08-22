@@ -56,6 +56,16 @@ export async function resolveOrderItems(items, currency) {
     });
 
     if (product) {
+      if (Number(product.stock) < quantity) {
+        return {
+          ok: false,
+          message:
+            product.stock > 0
+              ? `Only ${product.stock} unit(s) of "${product.name}" left in stock. Please adjust the quantity.`
+              : `"${product.name}" is currently out of stock.`
+        };
+      }
+
       resolvedItems.push({
         name: product.name,
         quantity,
