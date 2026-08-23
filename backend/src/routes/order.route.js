@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import Order from "../models/order.model.js";
 import { sendOrderEmail } from "../config/email.js";
 import { resolveOrderItems } from "../utils/orderPricing.js";
@@ -19,6 +20,10 @@ function makeManualOrderId() {
   return `rdfm_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
+
 // =========================================
 // GET ALL ORDERS — admin only (contains customer PII)
 // =========================================
@@ -34,8 +39,7 @@ router.get("/", authenticate, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("GET ORDERS ERROR:", error);
     res.status(500).json({
-      message: "Failed to retrieve orders",
-      error: error.message
+      message: "Could not load orders right now. Please try again shortly."
     });
   }
 });
@@ -100,8 +104,7 @@ router.post("/", authenticate, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("ORDER SAVE ERROR:", error);
     res.status(500).json({
-      message: "Failed to save order",
-      error: error.message
+      message: "Could not save this order. Please try again."
     });
   }
 });
@@ -112,6 +115,10 @@ router.post("/", authenticate, requireAdmin, async (req, res) => {
 
 router.patch("/:id", authenticate, requireAdmin, async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid order ID." });
+    }
+
     const { status } = req.body;
 
     const updatedOrder = await Order.findByIdAndUpdate(
@@ -172,9 +179,11 @@ router.patch("/:id", authenticate, requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("UPDATE ORDER ERROR:", error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: "That status value isn't valid." });
+    }
     res.status(500).json({
-      message: "Failed to update order status",
-      error: error.message
+      message: "Could not update this order. Please try again."
     });
   }
 });
@@ -185,6 +194,10 @@ router.patch("/:id", authenticate, requireAdmin, async (req, res) => {
 
 router.delete("/:id", authenticate, requireAdmin, async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid order ID." });
+    }
+
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
@@ -193,8 +206,7 @@ router.delete("/:id", authenticate, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("DELETE ORDER ERROR:", error);
     res.status(500).json({
-      message: "Failed to delete order",
-      error: error.message
+      message: "Could not delete this order. Please try again."
     });
   }
 });
@@ -210,8 +222,7 @@ router.delete("/", authenticate, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("DELETE ALL ORDERS ERROR:", error);
     res.status(500).json({
-      message: "Failed to delete all orders",
-      error: error.message
+      message: "Could not delete all orders. Please try again."
     });
   }
 });

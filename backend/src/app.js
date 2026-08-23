@@ -10,6 +10,7 @@ import paymentRouter from "./routes/payment.route.js";
 import ghanaPaymentRouter from "./routes/ghanaPayment.route.js";
 import productRouter from "./routes/product.route.js";
 import userRouter from "./routes/user.route.js";
+import newsletterRouter from "./routes/newsletter.route.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/test-email", testEmailRouter);
 app.use("/api/v1/ghana-payment", ghanaPaymentRouter);
 app.use("/api/v1/products", productRouter);
+app.use("/api/v1/newsletter", newsletterRouter);
 
 app.get("/", (req, res) => {
   res.send("Royal Dynasty Fragrance backend is running!");
@@ -60,6 +62,32 @@ app.use((err, req, res, next) => {
   }
   
   next(err);
+});
+
+// Malformed JSON request bodies (e.g. a broken client request) land here —
+// express.json() throws this before any route handler ever runs.
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed' || err instanceof SyntaxError) {
+    return res.status(400).json({
+      success: false,
+      message: 'The request could not be read. Please check your input and try again.'
+    });
+  }
+  next(err);
+});
+
+// Final safety net. Every route already handles its own errors, but if
+// anything unexpected ever reaches here, never let a raw error (which can
+// include stack traces or internal details) reach the client.
+app.use((err, req, res, next) => {
+  console.error("UNHANDLED ERROR:", err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong on our end. Please try again.'
+  });
 });
 
 export default app;

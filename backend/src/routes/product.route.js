@@ -1,13 +1,19 @@
 import express from "express";
+import mongoose from "mongoose";
 import Product from "../models/product.model.js";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from 'url';
+import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 // =========================================
 // MULTER CONFIGURATION FOR IMAGE UPLOADS
@@ -51,30 +57,34 @@ router.get("/", async (req, res) => {
     res.json(products);
   } catch (err) {
     console.error("GET PRODUCTS ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Could not load products right now. Please try again shortly." });
   }
 });
 
 // =========================================
-// GET ALL PRODUCTS (INCLUDING INACTIVE)
+// GET ALL PRODUCTS (INCLUDING INACTIVE) — admin only
 // =========================================
 
-router.get("/all", async (req, res) => {
+router.get("/all", authenticate, requireAdmin, async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
     console.error("GET ALL PRODUCTS ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Could not load products right now. Please try again shortly." });
   }
 });
 
 // =========================================
-// GET SINGLE PRODUCT
+// GET SINGLE PRODUCT — admin only (used by the dashboard edit form)
 // =========================================
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticate, requireAdmin, async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid product ID." });
+    }
+
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -82,18 +92,23 @@ router.get("/:id", async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error("GET PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Could not load this product. Please try again." });
   }
 });
 
 // =========================================
-// CREATE PRODUCT (with image upload)
+// CREATE PRODUCT (with image upload) — admin only
 // =========================================
 
-router.post("/", upload.single("image"), async (req, res) => {
+router.post("/", authenticate, requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const productData = JSON.parse(req.body.data);
-    
+    let productData;
+    try {
+      productData = JSON.parse(req.body.data);
+    } catch (parseError) {
+      return res.status(400).json({ message: "Invalid product data submitted." });
+    }
+
     // If image was uploaded, use the filename
     if (req.file) {
       productData.image = req.file.filename;
@@ -103,23 +118,35 @@ router.post("/", upload.single("image"), async (req, res) => {
     res.status(201).json(product);
   } catch (err) {
     console.error("CREATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: "Please check the product details and try again." });
+    }
+    res.status(500).json({ message: "Could not save the product. Please try again." });
   }
 });
 
 // =========================================
-// UPDATE PRODUCT (with image upload)
+// UPDATE PRODUCT (with image upload) — admin only
 // =========================================
 
-router.put("/:id", upload.single("image"), async (req, res) => {
+router.put("/:id", authenticate, requireAdmin, upload.single("image"), async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid product ID." });
+    }
+
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const updateData = JSON.parse(req.body.data);
-    
+    let updateData;
+    try {
+      updateData = JSON.parse(req.body.data);
+    } catch (parseError) {
+      return res.status(400).json({ message: "Invalid product data submitted." });
+    }
+
     // If new image was uploaded, update the image field
     if (req.file) {
       updateData.image = req.file.filename;
@@ -128,22 +155,29 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     res.json(updatedProduct);
   } catch (err) {
     console.error("UPDATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: "Please check the product details and try again." });
+    }
+    res.status(500).json({ message: "Could not update the product. Please try again." });
   }
 });
 
 // =========================================
-// DELETE PRODUCT
+// DELETE PRODUCT — admin only
 // =========================================
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticate, requireAdmin, async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid product ID." });
+    }
+
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -151,21 +185,25 @@ router.delete("/:id", async (req, res) => {
     res.json({ message: "Product deleted successfully" });
   } catch (err) {
     console.error("DELETE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Could not delete the product. Please try again." });
   }
 });
 
 // =========================================
-// UPDATE PRODUCT STATUS (Active/Hidden)
+// UPDATE PRODUCT STATUS (Active/Hidden) — admin only
 // =========================================
 
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", authenticate, requireAdmin, async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid product ID." });
+    }
+
     const { active } = req.body;
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { active },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -173,21 +211,25 @@ router.patch("/:id/status", async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error("UPDATE STATUS ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Could not update product status. Please try again." });
   }
 });
 
 // =========================================
-// UPDATE PRODUCT STOCK
+// UPDATE PRODUCT STOCK — admin only
 // =========================================
 
-router.patch("/:id/stock", async (req, res) => {
+router.patch("/:id/stock", authenticate, requireAdmin, async (req, res) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid product ID." });
+    }
+
     const { stock } = req.body;
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { stock },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -195,7 +237,7 @@ router.patch("/:id/stock", async (req, res) => {
     res.json(product);
   } catch (err) {
     console.error("UPDATE STOCK ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Could not update product stock. Please try again." });
   }
 });
 
