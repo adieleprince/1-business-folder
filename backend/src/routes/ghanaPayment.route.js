@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import { resolveOrderItems } from "../utils/orderPricing.js";
 import { orderConfirmationEmail } from "../email-templates/index.js";
 import { sendOrderEmail } from "../config/email.js";
+import { isValidEmail, sanitizeText } from "../utils/validation.js";
+import { orderCreationLimiter } from "../middleware/rateLimit.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,7 +61,7 @@ function makeGhanaOrderId() {
   return `rdfg_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-router.post("/", upload.single("receipt"), async (req, res) => {
+router.post("/", orderCreationLimiter, upload.single("receipt"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -68,13 +70,22 @@ router.post("/", upload.single("receipt"), async (req, res) => {
       });
     }
 
-    const { customerName, phone, address } = req.body;
-    const customerEmail = req.body.email;
+    const customerName = sanitizeText(req.body.customerName, 150);
+    const phone = sanitizeText(req.body.phone, 40);
+    const customerEmail = sanitizeText(req.body.email, 200).toLowerCase();
+    const address = sanitizeText(req.body.address, 500);
 
     if (!customerName || !phone || !customerEmail || !address) {
       return res.status(400).json({
         success: false,
         message: "Full name, phone, email, and address are required."
+      });
+    }
+
+    if (!isValidEmail(customerEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address."
       });
     }
 

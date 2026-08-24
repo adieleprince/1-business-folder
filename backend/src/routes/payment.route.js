@@ -3,12 +3,13 @@ import Order from "../models/order.model.js";
 import { resolveOrderItems } from "../utils/orderPricing.js";
 import { sendOrderEmail } from "../config/email.js";
 import { orderConfirmationEmail } from "../email-templates/index.js";
+import { isValidEmail, sanitizeText } from "../utils/validation.js";
+import { orderCreationLimiter } from "../middleware/rateLimit.middleware.js";
 
 const router = express.Router();
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-const PAYSTACK_CALLBACK_URL =
-  process.env.PAYSTACK_CALLBACK_URL || "http://localhost:5500/checkout.html";
+const PAYSTACK_CALLBACK_URL = process.env.PAYSTACK_CALLBACK_URL;
 
 function makeReference() {
   return `rdf_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -23,7 +24,7 @@ function makeReference() {
 // transaction. This gives every payment attempt a real, traceable order
 // record and makes the reference the natural key for idempotency.
 // =========================================
-router.post("/initialize", async (req, res) => {
+router.post("/initialize", orderCreationLimiter, async (req, res) => {
   try {
     if (!PAYSTACK_SECRET_KEY) {
       return res.status(500).json({
@@ -32,12 +33,23 @@ router.post("/initialize", async (req, res) => {
       });
     }
 
-    const { customerName, phone, email, address, currency, items } = req.body;
+    const customerName = sanitizeText(req.body.customerName, 150);
+    const phone = sanitizeText(req.body.phone, 40);
+    const email = sanitizeText(req.body.email, 200).toLowerCase();
+    const address = sanitizeText(req.body.address, 500);
+    const { currency, items } = req.body;
 
     if (!customerName || !phone || !email || !address) {
       return res.status(400).json({
         success: false,
         message: "Full name, phone, email, and address are required."
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address."
       });
     }
 

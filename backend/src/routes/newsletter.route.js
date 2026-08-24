@@ -1,5 +1,6 @@
 import express from "express";
 import Subscriber from "../models/subscriber.model.js";
+import { newsletterLimiter } from "../middleware/rateLimit.middleware.js";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // success.
 // =========================================
 
-router.post("/subscribe", async (req, res) => {
+router.post("/subscribe", newsletterLimiter, async (req, res) => {
   try {
     const email = (req.body?.email || "").toString().trim().toLowerCase();
 

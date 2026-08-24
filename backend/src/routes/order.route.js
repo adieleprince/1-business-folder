@@ -4,6 +4,7 @@ import Order from "../models/order.model.js";
 import { sendOrderEmail } from "../config/email.js";
 import { resolveOrderItems } from "../utils/orderPricing.js";
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
+import { isValidEmail, sanitizeText } from "../utils/validation.js";
 import {
   orderConfirmationEmail,
   paymentVerifiedEmail,
@@ -53,12 +54,20 @@ router.get("/", authenticate, requireAdmin, async (req, res) => {
 
 router.post("/", authenticate, requireAdmin, async (req, res) => {
   try {
-    const { customerName, phone, email, address, currency, items, paymentMethod, status } = req.body;
+    const customerName = sanitizeText(req.body.customerName, 150);
+    const phone = sanitizeText(req.body.phone, 40);
+    const email = sanitizeText(req.body.email, 200).toLowerCase();
+    const address = sanitizeText(req.body.address, 500);
+    const { currency, items, paymentMethod, status } = req.body;
 
     if (!customerName || !phone || !email || !address) {
       return res.status(400).json({
         message: "customerName, phone, email, and address are required."
       });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Please enter a valid email address." });
     }
 
     const pricing = await resolveOrderItems(items, currency);

@@ -2,24 +2,38 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
+import { isValidEmail, sanitizeText } from '../utils/validation.js';
+import { loginLimiter } from '../middleware/rateLimit.middleware.js';
 
 const router = express.Router();
 
 // =============================================
 // REGISTER ROUTE
 // =============================================
-router.post('/register', async (req, res) => {
+router.post('/register', loginLimiter, async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const email = sanitizeText(req.body?.email, 200).toLowerCase();
+    const username = sanitizeText(req.body?.username, 60);
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
 
     // 1. Check if user already exists
+    // (email/username are guaranteed plain, length-capped strings above,
+    // so this can never be tricked into a MongoDB operator injection.)
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists with this email' });
     }
 
     // 1b. Check if username is already taken
-    const existingUsername = await User.findOne({ username: username.toLowerCase().trim() });
+    const existingUsername = await User.findOne({ username: username.toLowerCase() });
     if (existingUsername) {
       return res.status(400).json({ success: false, message: 'Username already taken' });
     }
@@ -27,7 +41,7 @@ router.post('/register', async (req, res) => {
     // 3. Create and save the new user
     const newUser = new User({
       username,
-      email: email.toLowerCase().trim(),
+      email,
       password,
       isAdmin: false // Regular customers are not admins
     });
@@ -50,10 +64,10 @@ router.post('/register', async (req, res) => {
 // =============================================
 // LOGIN ROUTE
 // =============================================
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
-    const email = req.body?.email?.toString().trim().toLowerCase() || '';
-    const password = String(req.body?.password || '');
+    const email = sanitizeText(req.body?.email, 200).toLowerCase();
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Email and password are required' });

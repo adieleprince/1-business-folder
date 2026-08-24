@@ -17,10 +17,40 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// ============================================================
+// CORS
+// ============================================================
+// Set ALLOWED_ORIGINS in .env to a comma-separated list of the exact
+// frontend origin(s) allowed to call this API in production, e.g.
+// ALLOWED_ORIGINS=https://royaldynastyfragrance.com
+// If it's not set, requests from any origin are accepted (so local
+// development keeps working with zero setup), but a warning is logged
+// so this isn't missed when deploying.
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : null;
+
+if (!allowedOrigins) {
+  console.warn("⚠️  ALLOWED_ORIGINS is not set in .env — accepting requests from any origin. Set it before deploying to production.");
+}
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Requests with no Origin header (curl, Postman, server-to-server) are
+    // allowed through; the routes themselves are protected separately
+    // where it matters.
+    if (!origin) return callback(null, true);
+    if (!allowedOrigins || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  }
+};
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -61,6 +91,18 @@ app.use((err, req, res, next) => {
     });
   }
   
+  next(err);
+});
+
+// A rejected CORS origin lands here (thrown from the corsOptions.origin
+// function above).
+app.use((err, req, res, next) => {
+  if (err.message && err.message.includes('not allowed by CORS')) {
+    return res.status(403).json({
+      success: false,
+      message: 'This origin is not permitted to access this API.'
+    });
+  }
   next(err);
 });
 

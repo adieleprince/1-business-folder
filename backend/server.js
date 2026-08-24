@@ -7,8 +7,19 @@ import User from "./src/models/user.model.js";
 
 const PORT = process.env.PORT || 5000;
 
+// Environment variables the server cannot safely run without.
+const REQUIRED_ENV_VARS = ["MONGODB_URI", "JWT_SECRET", "PAYSTACK_SECRET_KEY", "PAYSTACK_CALLBACK_URL"];
+
 const startServer = async () => {
     try {
+        // 0. Refuse to start if critical secrets are missing from .env
+        const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+        if (missing.length > 0) {
+            console.error(`❌ Missing required environment variable(s): ${missing.join(", ")}`);
+            console.error("   Add them to backend/.env before starting the server.");
+            process.exit(1);
+        }
+
         // 1. Connect to the database
         await connectDB();
 
@@ -23,12 +34,11 @@ const startServer = async () => {
             }
 
             try {
-                // Check if the user already exists in the database
                 const normalizedEmail = adminEmail.toLowerCase().trim();
                 const existingAdmin = await User.findOne({ email: normalizedEmail });
 
                 if (!existingAdmin) {
-                    // ADMIN_USERNAME is optional — falls back to the part of the email before the "@"
+                    // Falls back to the part of the email before the "@" if ADMIN_USERNAME isn't set
                     const adminUsername = process.env.ADMIN_USERNAME || normalizedEmail.split("@")[0];
 
                     const newAdmin = new User({
@@ -39,7 +49,12 @@ const startServer = async () => {
                     });
 
                     await newAdmin.save();
-                    console.log(`✅ Admin user successfully created: ${normalizedEmail}`);
+                    console.log(`✅ Admin user created: ${normalizedEmail}`);
+                } else if (!existingAdmin.isAdmin) {
+                    // Account exists (e.g. registered as a customer first) — promote it
+                    existingAdmin.isAdmin = true;
+                    await existingAdmin.save();
+                    console.log(`✅ Existing account promoted to admin: ${normalizedEmail}`);
                 } else {
                     console.log(`ℹ️ Admin user already exists. Skipping creation.`);
                 }
