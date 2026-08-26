@@ -753,7 +753,7 @@
       color: var(--ink-soft);
     }
 
-    .currency-filter select {
+        .currency-filter select {
       padding: 0.3rem 1rem;
       border-radius: 999px;
       border: 1.5px solid var(--line);
@@ -761,6 +761,25 @@
       font-size: 0.8rem;
       background: var(--white);
     }
+
+    .orders-list { display: flex; flex-direction: column; gap: 1rem; }
+    .order-card { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--white); overflow: hidden; transition: box-shadow 0.3s var(--ease); }
+    .order-card:hover { box-shadow: var(--shadow-card); }
+    .order-card-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; padding: 0.9rem 1.2rem; background: var(--ivory); border-bottom: 1px solid var(--line); }
+    .order-card-id { font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+    .order-card-id span { display: block; font-weight: 400; font-size: 0.72rem; color: var(--ink-faint); margin-top: 2px; }
+    .order-card-top-right { display: flex; align-items: center; gap: 0.7rem; }
+    .order-card-total { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--ink); }
+    .order-card-body { padding: 1rem 1.2rem; }
+    .order-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem 1.2rem; margin-bottom: 0.9rem; }
+    @media (max-width: 700px) { .order-info-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .order-info-grid { grid-template-columns: 1fr; } }
+    .order-info-item { min-width: 0; }
+    .order-info-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); font-weight: 600; margin-bottom: 2px; }
+    .order-info-value { font-size: 0.86rem; color: var(--ink); word-break: break-word; }
+    .order-address-row { font-size: 0.82rem; color: var(--ink-soft); padding-top: 0.7rem; border-top: 1px solid var(--line); margin-bottom: 0.9rem; }
+    .order-address-row strong { color: var(--ink); }
+    .order-card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   </style>
 </head>
 <body>
@@ -1003,24 +1022,8 @@
             <button class="btn btn-outline btn-sm" id="deleteAllTestOrdersBtn" style="color:var(--danger);border-color:var(--danger);">🧹 Delete All Test Orders</button>
           </div>
         </div>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Date</th>
-                <th>Items</th>
-                <th>Currency</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="allOrders">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
+                <div id="allOrders" class="orders-list">
+          <!-- Populated by JS -->
         </div>
       </div>
     </div>
@@ -1530,38 +1533,74 @@ async function renderOrders() {
     filtered = filtered.filter(o => getOrderCurrency(o) === currencyFilter);
   }
 
-  const tbody = document.getElementById('allOrders');
+  const container = document.getElementById('allOrders');
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-muted text-center">No orders found.</td></tr>`;
+    container.innerHTML = `<p class="text-muted text-center">No orders found.</p>`;
     return;
   }
 
-  tbody.innerHTML = filtered.map(o => {
+  container.innerHTML = filtered.map(o => {
     const total = getOrderTotal(o);
     const currency = getOrderCurrency(o);
     const hasReceipt = !!o.receipt;
+    const itemCount = o.items.reduce((sum, item) => sum + item.quantity, 0);
     return `
-      <tr>
-        <td><strong>${o._id || 'N/A'}</strong></td>
-        <td>${o.customerName || 'Unknown'}</td>
-        <td>${new Date(o.createdAt).toLocaleDateString()}</td>
-        <td>${o.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
-        <td>${getCurrencyBadge(currency)}</td>
-        <td>${formatCurrency(total, currency)}</td>
-        <td>${getStatusBadge(o.status)}</td>
-        <td>
-          <button class="btn btn-sm btn-outline" onclick="viewOrderDetails('${o._id}')">View</button>
-          ${hasReceipt ? `<button class="btn btn-sm btn-primary" onclick="viewReceipt('${o._id}')">📄 Receipt</button>` : ''}
-          ${o.status === 'Pending Verification' ? `
-            <button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o._id}', 'Paid')">Verify</button>
-            <button class="btn btn-sm btn-danger" onclick="cancelOrder('${o._id}')">Cancel</button>
-          ` : ''}
-          ${o.status === 'Paid' ? `
-            <button class="btn btn-sm btn-primary" onclick="updateOrderStatus('${o._id}', 'Completed')">Complete</button>
-          ` : ''}
-          <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o._id}')">🗑️</button>
-        </td>
-      </tr>
+      <div class="order-card">
+        <div class="order-card-top">
+          <div class="order-card-id">
+            ${o.orderId || o._id || 'N/A'}
+            <span>${new Date(o.createdAt).toLocaleString()}</span>
+          </div>
+          <div class="order-card-top-right">
+            ${getCurrencyBadge(currency)}
+            ${getStatusBadge(o.status)}
+            <span class="order-card-total">${formatCurrency(total, currency)}</span>
+          </div>
+        </div>
+        <div class="order-card-body">
+          <div class="order-info-grid">
+            <div class="order-info-item">
+              <div class="order-info-label">Customer</div>
+              <div class="order-info-value">${o.customerName || 'Unknown'}</div>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Email</div>
+              <div class="order-info-value">${o.email || 'N/A'}</div>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Phone</div>
+              <div class="order-info-value">${o.phone || 'N/A'}</div>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Payment Method</div>
+              <div class="order-info-value">${o.paymentMethod || 'N/A'}</div>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Payment Reference</div>
+              <div class="order-info-value">${o.paymentReference || o.orderId || '—'}</div>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Items</div>
+              <div class="order-info-value">${itemCount} item(s)</div>
+            </div>
+          </div>
+          <div class="order-address-row">
+            <strong>Delivery Address:</strong> ${o.address || 'N/A'}
+          </div>
+          <div class="order-card-actions">
+            <button class="btn btn-sm btn-outline" onclick="viewOrderDetails('${o._id}')">View Details</button>
+            ${hasReceipt ? `<button class="btn btn-sm btn-primary" onclick="viewReceipt('${o._id}')">📄 Receipt</button>` : ''}
+            ${o.status === 'Pending Verification' ? `
+              <button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o._id}', 'Paid')">Verify</button>
+              <button class="btn btn-sm btn-danger" onclick="cancelOrder('${o._id}')">Cancel</button>
+            ` : ''}
+            ${o.status === 'Paid' ? `
+              <button class="btn btn-sm btn-primary" onclick="updateOrderStatus('${o._id}', 'Completed')">Complete</button>
+            ` : ''}
+            <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o._id}')">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
     `;
   }).join('');
 }
