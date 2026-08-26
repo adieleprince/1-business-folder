@@ -118,3 +118,8 @@ dist
 .pnp.*
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
+
+# Uploaded files (product images, payment receipts) — not source, and
+# receipts may contain sensitive customer payment information
+backend/uploads/*
+!backend/uploads/.gitkeep
