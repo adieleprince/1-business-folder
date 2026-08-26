@@ -1,283 +1,204 @@
 // email-templates/base-template.js
-
-export const baseTemplate = (content, subject) => {
-  const currentYear = new Date().getFullYear();
-  
-  return `
+export const baseTemplate = (content, preheader = '') => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>Royal Dynasty Fragrances</title>
   <style>
-    * {
+    body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background-color: #f5f2ee;
-      line-height: 1.6;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #F8F5F0;
       color: #1C1A17;
-      padding: 20px;
     }
     .email-wrapper {
       max-width: 600px;
       margin: 0 auto;
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(28, 26, 23, 0.12);
-      overflow: hidden;
+      background-color: #FFFDFB;
     }
     .email-header {
-      background: linear-gradient(160deg, #3A2B20 0%, #5C3D2E 100%);
-      padding: 40px 30px 30px;
+      background: linear-gradient(160deg, #221c16 0%, #3c3021 45%, #6d4e33 100%);
+      padding: 40px 30px;
       text-align: center;
-      border-bottom: 4px solid #C49A6C;
-    }
-    .email-header .logo {
-      max-width: 80px;
-      height: auto;
-      margin-bottom: 12px;
-      border-radius: 8px;
     }
     .email-header h1 {
-      font-family: 'Georgia', 'Times New Roman', serif;
       color: #ffffff;
       font-size: 24px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
       margin: 0;
+      font-family: Georgia, serif;
     }
-    .email-header .subtitle {
-      color: #C49A6C;
-      font-size: 13px;
-      letter-spacing: 0.3em;
+    .email-header p {
+      color: #EFE2D0;
+      font-size: 12px;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      font-weight: 400;
-      margin-top: 4px;
-    }
-    .email-header .divider {
-      width: 60px;
-      height: 2px;
-      background: #C49A6C;
-      margin: 14px auto 0;
-      border-radius: 2px;
+      margin-top: 8px;
     }
     .email-body {
-      padding: 35px 40px 30px;
+      padding: 40px 30px;
     }
-    .email-body .greeting {
+    .greeting {
       font-size: 18px;
       font-weight: 600;
-      color: #3A2B20;
-      margin-bottom: 16px;
-    }
-    .email-body .message {
-      color: #5C5650;
-      font-size: 15px;
-      line-height: 1.7;
       margin-bottom: 20px;
+      color: #1C1A17;
     }
-    .email-body .message p {
-      margin-bottom: 10px;
+    .message {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #5C5650;
+      margin-bottom: 30px;
     }
     .order-summary {
       background: #F8F5F0;
       border-radius: 14px;
-      padding: 22px 24px;
-      margin: 20px 0 24px;
-      border: 1px solid #E7E0D5;
+      padding: 24px;
+      margin-bottom: 30px;
     }
     .order-summary h3 {
-      font-family: 'Georgia', 'Times New Roman', serif;
-      color: #3A2B20;
+      font-family: Georgia, serif;
       font-size: 16px;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
+      margin-bottom: 16px;
+      color: #1C1A17;
       border-bottom: 2px solid #C49A6C;
+      padding-bottom: 10px;
     }
-    .order-summary .order-id {
+    .order-id {
       font-size: 13px;
       color: #948C7F;
-      margin-bottom: 14px;
-      font-weight: 500;
+      margin-bottom: 16px;
     }
-    .order-summary .order-id span {
-      color: #3A2B20;
+    .order-id span {
+      color: #1C1A17;
       font-weight: 600;
     }
-    .order-summary .items {
-      margin: 12px 0;
+    .items {
+      margin-bottom: 16px;
     }
-    .order-summary .item-row {
+    .item-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
-      font-size: 14px;
-      color: #5C5650;
+      padding: 10px 0;
       border-bottom: 1px solid #E7E0D5;
+      font-size: 14px;
     }
-    .order-summary .item-row:last-child {
+    .item-row:last-child {
       border-bottom: none;
     }
-    .order-summary .item-name {
-      flex: 1;
-    }
-    .order-summary .item-qty {
-      margin: 0 16px;
-      color: #948C7F;
-    }
-    .order-summary .item-price {
-      font-weight: 600;
-      color: #3A2B20;
-    }
-    .order-summary .total-row {
+    .total-row {
       display: flex;
       justify-content: space-between;
-      padding-top: 12px;
-      margin-top: 10px;
+      padding-top: 16px;
       border-top: 2px solid #C49A6C;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
-      color: #3A2B20;
     }
     .order-summary .total-row .total-amount {
       color: #9C7649;
     }
-    .email-body .btn {
-      display: inline-block;
-      padding: 14px 36px;
-      background: #C49A6C;
-      color: #ffffff;
-      text-decoration: none;
-      border-radius: 50px;
-      font-weight: 600;
-      font-size: 14px;
-      letter-spacing: 0.02em;
-      transition: background 0.3s ease;
-      border: none;
-      cursor: pointer;
-      margin: 8px 0 4px;
-    }
-    .email-body .btn:hover {
-      background: #9C7649;
-    }
-    .email-footer {
-      padding: 24px 40px 30px;
+    .delivery-info {
       background: #F8F5F0;
-      text-align: center;
-      border-top: 1px solid #E7E0D5;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin: 0 0 24px;
+      border: 1px solid #E7E0D5;
     }
-    .email-footer .social {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 14px;
+    .delivery-info h3 {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      color: #3A2B20;
+      font-size: 16px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #C49A6C;
     }
-    .email-footer .social a {
-      color: #948C7F;
-      text-decoration: none;
-      font-size: 13px;
-      transition: color 0.3s ease;
-    }
-    .email-footer .social a:hover {
-      color: #C49A6C;
-    }
-    .email-footer p {
-      font-size: 13px;
-      color: #948C7F;
-      margin: 0;
+    .delivery-info p {
+      color: #5C5650;
+      font-size: 14px;
       line-height: 1.6;
     }
-    .email-footer .brand-name {
+    .btn {
+      display: inline-block;
+      background: #C49A6C;
+      color: #ffffff;
+      padding: 14px 32px;
+      border-radius: 999px;
+      text-decoration: none;
       font-weight: 600;
-      color: #3A2B20;
+      font-size: 14px;
     }
-    @media (max-width: 480px) {
-      .email-body {
-        padding: 25px 20px 20px;
-      }
-      .email-footer {
-        padding: 20px;
-      }
-      .email-header {
-        padding: 30px 20px 24px;
-      }
-      .email-header h1 {
-        font-size: 20px;
-      }
-      .order-summary {
-        padding: 16px 18px;
-      }
-      .order-summary .item-row {
-        font-size: 13px;
-        flex-wrap: wrap;
-      }
-      .order-summary .item-qty {
-        margin: 0 10px;
-      }
+    .email-footer {
+      background: #1C1A17;
+      padding: 30px;
+      text-align: center;
+    }
+    .email-footer p {
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      margin: 4px 0;
+    }
+    .email-footer a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+    }
+    .social-links {
+      margin-top: 16px;
+    }
+    .social-links a {
+      display: inline-block;
+      margin: 0 8px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
+  <div style="display:none;max-height:0;overflow:hidden;">${preheader}</div>
   <div class="email-wrapper">
-    <!-- HEADER -->
     <div class="email-header">
-      <div style="width:80px;height:80px;background:#C49A6C;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;font-weight:bold;font-family:serif;">R</div>
       <h1>Royal Dynasty Fragrances</h1>
-      <div class="subtitle">Premium Luxury Fragrances</div>
-      <div class="divider"></div>
+      <p>Luxury That Defines You</p>
     </div>
-
-    <!-- BODY -->
     <div class="email-body">
       ${content}
     </div>
-
-    <!-- FOOTER -->
     <div class="email-footer">
-      <div class="social">
+      <p>Royal Dynasty Fragrances</p>
+      <p>Questions? Reach us at <a href="mailto:royaldynastyfragrances@gmail.com">royaldynastyfragrances@gmail.com</a></p>
+      <div class="social-links">
         <a href="#">Instagram</a>
         <a href="#">Facebook</a>
-        <a href="#">Twitter</a>
+        <a href="#">X (Twitter)</a>
       </div>
-      <p>
-        <span class="brand-name">Royal Dynasty Fragrances</span><br>
-        Premium Luxury Fragrances
-      </p>
-      <p style="margin-top: 8px; font-size: 12px; color: #B5ABA0;">
-        &copy; ${currentYear} Royal Dynasty Fragrances. All rights reserved.
-      </p>
     </div>
   </div>
 </body>
 </html>
-  `;
-};
+`;
 
-// Helper to generate order summary HTML
 export const generateOrderSummary = (order) => {
-  const currency = order.currency || 'NGN';
-  const currencySymbol = currency === 'GHS' ? 'GH₵' : '₦';
-  const formatPrice = (amount) => {
-    if (currency === 'GHS') {
-      return `GH₵${Number(amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    return `₦${Number(amount).toLocaleString('en-NG')}`;
-  };
+  // Ghana orders are always stored with currency "GHS"; Nigeria orders
+  // with "NGN" (see order.model.js) — this is the real signal to use,
+  // never a guess or a hardcoded default beyond the safe NGN fallback.
+  const currency = order.currency === 'GHS' ? 'GHS' : 'NGN';
 
-  const itemsHtml = (order.items || []).map(item => `
-    <div class="item-row">
-      <span class="item-name">${item.name}</span>
-      <span class="item-qty">×${item.quantity}</span>
-      <span class="item-price">${formatPrice((Number(item.price) || 0) * item.quantity)}</span>
-    </div>
-  `).join('');
+  const itemsHtml = (order.items || [])
+    .map(
+      (item) => `
+      <div class="item-row">
+        <span>${item.name} × ${item.quantity} — ${formatPrice(item.price * item.quantity, currency)}</span>
+      </div>
+    `
+    )
+    .join('');
 
-  const total = (order.items || []).reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
+  const total = (order.items || []).reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   return `
     <div class="order-summary">
@@ -287,9 +208,25 @@ export const generateOrderSummary = (order) => {
         ${itemsHtml || '<p style="color:#948C7F;font-size:14px;">No items in this order.</p>'}
       </div>
       <div class="total-row">
-        <span>Total</span>
-        <span class="total-amount">${formatPrice(total)}</span>
+        <span class="total-amount">Total: ${formatPrice(total, currency)}</span>
       </div>
     </div>
   `;
 };
+
+// Delivery-fee note. Only ever included by the calling template once an
+// order's payment has actually been verified (see order-confirmation.js
+// and payment-verified.js) — never shown before that.
+export const generateDeliveryInfo = () => `
+  <div class="delivery-info">
+    <h3>Delivery Information</h3>
+    <p>Delivery fee goes to courier but delivery is free for customers in RMU campus.</p>
+  </div>
+`;
+
+function formatPrice(amount, currency = 'NGN') {
+  if (currency === 'GHS') {
+    return `₵${Number(amount).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `₦${Number(amount).toLocaleString('en-NG')}`;
+}

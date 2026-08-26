@@ -1,5 +1,5 @@
 // email-templates/payment-verified.js
-import { baseTemplate, generateOrderSummary } from './base-template.js';
+import { baseTemplate, generateOrderSummary, generateDeliveryInfo } from './base-template.js';
 
 export const paymentVerifiedEmail = (order) => {
   const content = `
@@ -13,6 +13,7 @@ export const paymentVerifiedEmail = (order) => {
       </p>
     </div>
     ${generateOrderSummary(order)}
+    ${generateDeliveryInfo()}
     <div style="text-align: center; margin-top: 8px;">
       <p style="color: #948C7F; font-size: 13px;">
         Thank you for shopping with Royal Dynasty Fragrances.

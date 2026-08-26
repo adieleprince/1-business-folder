@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from 'url';
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
+import { notifySubscribers } from "../utils/subscriberMailer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,7 +116,16 @@ router.post("/", authenticate, requireAdmin, upload.single("image"), async (req,
     }
 
     const product = await Product.create(productData);
+
+    // Respond immediately — the product save is authoritative and must
+    // never wait on (or fail because of) subscriber emails.
     res.status(201).json(product);
+
+    if (product.active) {
+      notifySubscribers(product, "new").catch((err) =>
+        console.error("NEW PRODUCT NOTIFICATION ERROR:", err)
+      );
+    }
   } catch (err) {
     console.error("CREATE PRODUCT ERROR:", err);
     if (err.name === "ValidationError") {
@@ -139,6 +149,7 @@ router.put("/:id", authenticate, requireAdmin, upload.single("image"), async (re
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
+    const previousStock = product.stock;
 
     let updateData;
     try {
@@ -159,6 +170,15 @@ router.put("/:id", authenticate, requireAdmin, upload.single("image"), async (re
     );
 
     res.json(updatedProduct);
+
+    // Only a genuine "was out of stock, now isn't" transition counts as a
+    // restock — this is triggered by the actual update request itself,
+    // never by the dashboard simply reloading/re-fetching products.
+    if (previousStock === 0 && updatedProduct.stock > 0 && updatedProduct.active) {
+      notifySubscribers(updatedProduct, "restock").catch((err) =>
+        console.error("RESTOCK NOTIFICATION ERROR:", err)
+      );
+    }
   } catch (err) {
     console.error("UPDATE PRODUCT ERROR:", err);
     if (err.name === "ValidationError") {
@@ -225,6 +245,12 @@ router.patch("/:id/stock", authenticate, requireAdmin, async (req, res) => {
       return res.status(400).json({ message: "Invalid product ID." });
     }
 
+    const existingProduct = await Product.findById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    const previousStock = existingProduct.stock;
+
     const { stock } = req.body;
     const product = await Product.findByIdAndUpdate(
       req.params.id,
@@ -235,6 +261,12 @@ router.patch("/:id/stock", authenticate, requireAdmin, async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
     res.json(product);
+
+    if (previousStock === 0 && product.stock > 0 && product.active) {
+      notifySubscribers(product, "restock").catch((err) =>
+        console.error("RESTOCK NOTIFICATION ERROR:", err)
+      );
+    }
   } catch (err) {
     console.error("UPDATE STOCK ERROR:", err);
     res.status(500).json({ message: "Could not update product stock. Please try again." });
