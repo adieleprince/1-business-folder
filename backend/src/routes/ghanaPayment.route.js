@@ -1,19 +1,18 @@
 import express from "express";
 import Order from "../models/order.model.js";
 import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
 import { resolveOrderItems } from "../utils/orderPricing.js";
 import { orderConfirmationEmail } from "../email-templates/index.js";
 import { sendOrderEmail } from "../config/email.js";
 import { isValidEmail, sanitizeText } from "../utils/validation.js";
 import { orderCreationLimiter } from "../middleware/rateLimit.middleware.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { uploadBufferToCloudinary, deleteFromCloudinary, cloudinaryConfigured } from "../config/cloudinary.js";
 
 // =========================================
 // MULTER CONFIGURATION FOR RECEIPT UPLOADS
+// Files are held in memory only, then streamed to Cloudinary.
+// Render wipes local disk on every redeploy/restart, so disk storage
+// is not safe for production.
 // =========================================
 
 const ALLOWED_EXTENSIONS = /\.(jpe?g|png|webp|gif|pdf)$/i;
@@ -25,19 +24,7 @@ const ALLOWED_MIME_TYPES = [
   "application/pdf"
 ];
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "..", "..", "uploads"));
-  },
-  filename: function (req, file, cb) {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname).toLowerCase();
-    cb(null, uniqueName);
-  }
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const extOk = ALLOWED_EXTENSIONS.test(file.originalname);
@@ -99,25 +86,54 @@ router.post("/", orderCreationLimiter, upload.single("receipt"), async (req, res
       });
     }
 
-    const pricing = await resolveOrderItems(items, "GHS");
+        const pricing = await resolveOrderItems(items, "GHS");
     if (!pricing.ok) {
       return res.status(400).json({ success: false, message: pricing.message });
     }
 
-    const order = await Order.create({
-      orderId: makeGhanaOrderId(),
-      customerName,
-      phone,
-      email: customerEmail,
-      address,
-      amount: pricing.amount,
-      currency: "GHS",
-      paymentMethod: "Ghana Mobile Money",
-      receipt: req.file.filename,
-      receiptOriginalName: req.file.originalname,
-      items: pricing.items,
-      status: "Pending Verification"
-    });
+    if (!cloudinaryConfigured) {
+      return res.status(500).json({
+        success: false,
+        message: "Receipt uploads are not configured on the server. Please contact support."
+      });
+    }
+
+    let uploadResult;
+    try {
+      uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "royal-dynasty/receipts",
+        resourceType: "auto"
+      });
+    } catch (uploadError) {
+      console.error("RECEIPT UPLOAD ERROR:", uploadError);
+      return res.status(500).json({
+        success: false,
+        message: "Could not upload your receipt. Please try again."
+      });
+    }
+
+    let order;
+    try {
+      order = await Order.create({
+        orderId: makeGhanaOrderId(),
+        customerName,
+        phone,
+        email: customerEmail,
+        address,
+        amount: pricing.amount,
+        currency: "GHS",
+        paymentMethod: "Ghana Mobile Money",
+        receipt: uploadResult.secure_url,
+        receiptPublicId: uploadResult.public_id,
+        receiptOriginalName: req.file.originalname,
+        items: pricing.items,
+        status: "Pending Verification"
+      });
+    } catch (createError) {
+      // Order failed to save — clean up the orphaned Cloudinary upload
+      deleteFromCloudinary(uploadResult.public_id, uploadResult.resource_type);
+      throw createError;
+    }
 
     // Send order confirmation to customer + admin
     try {

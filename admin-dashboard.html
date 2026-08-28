@@ -1494,7 +1494,7 @@ async function renderProducts() {
     <tr>
       <td>
         <img 
-          src="${p.image ? `${window.UPLOADS_BASE_URL}/${p.image}` : 'images/placeholder.png'}" 
+                    src="${p.image && p.image.startsWith('http') ? p.image : (p.image ? `${window.UPLOADS_BASE_URL}/${p.image}` : 'images/placeholder.png')}"
           alt="${p.name}" 
           class="product-thumb" 
           onerror="this.src='images/placeholder.png'"
@@ -1698,7 +1698,7 @@ async function openEditProduct(id) {
     
     const preview = document.getElementById('productImagePreview');
     if (product.image) {
-      preview.src = `${window.UPLOADS_BASE_URL}/${product.image}`;
+            preview.src = product.image.startsWith('http') ? product.image : `${window.UPLOADS_BASE_URL}/${product.image}`;
       preview.style.display = 'block';
     } else {
       preview.style.display = 'none';
@@ -1903,7 +1903,7 @@ function viewReceipt(orderId) {
     return;
   }
 
-  const receiptUrl = `${window.UPLOADS_BASE_URL}/${order.receipt}`;
+    const receiptUrl = order.receipt.startsWith('http') ? order.receipt : `${window.UPLOADS_BASE_URL}/${order.receipt}`;
   const filename = order.receiptOriginalName || order.receipt;
 
   const content = document.getElementById('receiptViewerContent');

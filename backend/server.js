@@ -8,7 +8,7 @@ import User from "./src/models/user.model.js";
 const PORT = process.env.PORT || 5000;
 
 // Environment variables the server cannot safely run without.
-const REQUIRED_ENV_VARS = ["MONGODB_URI", "JWT_SECRET", "PAYSTACK_SECRET_KEY", "PAYSTACK_CALLBACK_URL"];
+const REQUIRED_ENV_VARS = ["MONGODB_URI", "JWT_SECRET", "PAYSTACK_SECRET_KEY", "PAYSTACK_CALLBACK_URL", "CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"];
 
 const startServer = async () => {
     try {

@@ -7,8 +7,8 @@ const router = express.Router();
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: 'royaldynastyfragrances@gmail.com',
+            from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      to: process.env.ADMIN_EMAIL || 'royaldynastyfragrances@gmail.com',
       subject: 'Royal Dynasty Email Test',
       text: 'Your Royal Dynasty email system is working successfully!'
     });

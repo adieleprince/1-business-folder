@@ -3,12 +3,9 @@ import mongoose from "mongoose";
 import Product from "../models/product.model.js";
 import multer from "multer";
 import path from "path";
-import { fileURLToPath } from 'url';
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { notifySubscribers } from "../utils/subscriberMailer.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { uploadBufferToCloudinary, deleteFromCloudinary, cloudinaryConfigured } from "../config/cloudinary.js";
 
 const router = express.Router();
 
@@ -18,17 +15,12 @@ function isValidId(id) {
 
 // =========================================
 // MULTER CONFIGURATION FOR IMAGE UPLOADS
+// Files are held in memory only, then streamed to Cloudinary.
+// Render wipes local disk on every redeploy/restart, so disk storage
+// is not safe for production.
 // =========================================
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '..', '..', 'uploads'));
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -110,9 +102,22 @@ router.post("/", authenticate, requireAdmin, upload.single("image"), async (req,
       return res.status(400).json({ message: "Invalid product data submitted." });
     }
 
-    // If image was uploaded, use the filename
+        // If image was uploaded, push it to Cloudinary and store the hosted URL
     if (req.file) {
-      productData.image = req.file.filename;
+      if (!cloudinaryConfigured) {
+        return res.status(500).json({ message: "Image uploads are not configured on the server. Please contact the site admin." });
+      }
+      try {
+        const result = await uploadBufferToCloudinary(req.file.buffer, {
+          folder: "royal-dynasty/products",
+          resourceType: "image"
+        });
+        productData.image = result.secure_url;
+        productData.imagePublicId = result.public_id;
+      } catch (uploadError) {
+        console.error("PRODUCT IMAGE UPLOAD ERROR:", uploadError);
+        return res.status(500).json({ message: "Could not upload the product image. Please try again." });
+      }
     }
 
     const product = await Product.create(productData);
@@ -158,9 +163,24 @@ router.put("/:id", authenticate, requireAdmin, upload.single("image"), async (re
       return res.status(400).json({ message: "Invalid product data submitted." });
     }
 
-    // If new image was uploaded, update the image field
+        // If new image was uploaded, push it to Cloudinary and swap the image field
+    let oldImagePublicId = null;
     if (req.file) {
-      updateData.image = req.file.filename;
+      if (!cloudinaryConfigured) {
+        return res.status(500).json({ message: "Image uploads are not configured on the server. Please contact the site admin." });
+      }
+      try {
+        const result = await uploadBufferToCloudinary(req.file.buffer, {
+          folder: "royal-dynasty/products",
+          resourceType: "image"
+        });
+        updateData.image = result.secure_url;
+        updateData.imagePublicId = result.public_id;
+        oldImagePublicId = product.imagePublicId;
+      } catch (uploadError) {
+        console.error("PRODUCT IMAGE UPLOAD ERROR:", uploadError);
+        return res.status(500).json({ message: "Could not upload the product image. Please try again." });
+      }
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -170,6 +190,11 @@ router.put("/:id", authenticate, requireAdmin, upload.single("image"), async (re
     );
 
     res.json(updatedProduct);
+
+    // Clean up the replaced image in Cloudinary — best-effort, never blocks the response
+    if (oldImagePublicId) {
+      deleteFromCloudinary(oldImagePublicId, "image");
+    }
 
     // Only a genuine "was out of stock, now isn't" transition counts as a
     // restock — this is triggered by the actual update request itself,
@@ -198,11 +223,16 @@ router.delete("/:id", authenticate, requireAdmin, async (req, res) => {
       return res.status(400).json({ message: "Invalid product ID." });
     }
 
-    const product = await Product.findByIdAndDelete(req.params.id);
+        const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
     res.json({ message: "Product deleted successfully" });
+
+    // Clean up the image in Cloudinary — best-effort, never blocks the response
+    if (product.imagePublicId) {
+      deleteFromCloudinary(product.imagePublicId, "image");
+    }
   } catch (err) {
     console.error("DELETE PRODUCT ERROR:", err);
     res.status(500).json({ message: "Could not delete the product. Please try again." });

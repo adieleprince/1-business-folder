@@ -18,7 +18,7 @@
 
   // TODO: replace with your real backend URL before deploying to production.
   // Example: 'https://api.royaldynastyfragrance.com'
-  const PRODUCTION_API_ORIGIN = 'https://YOUR-PRODUCTION-BACKEND-URL.com';
+    const PRODUCTION_API_ORIGIN = 'https://royal-dynasty-fragrance.onrender.com';
 
   const API_ORIGIN = isLocal ? LOCAL_API_ORIGIN : PRODUCTION_API_ORIGIN;
 

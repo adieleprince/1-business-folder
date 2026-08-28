@@ -43,9 +43,13 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: 0
     },
-    image: {
+        image: {
       type: String,
       default: "images/placeholder.png"
+    },
+    imagePublicId: {
+      type: String,
+      default: ""
     },
     tag: {
       type: String,

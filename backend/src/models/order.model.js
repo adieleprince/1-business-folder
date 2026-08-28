@@ -51,7 +51,8 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "Paystack"
     },
-    receipt: String,
+        receipt: String,
+    receiptPublicId: String,
     receiptOriginalName: String,
     // Consistent status set used across the app:
     //   Pending Payment       — Paystack order created, awaiting checkout completion
