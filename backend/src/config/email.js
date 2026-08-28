@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -11,28 +11,33 @@ dotenv.config({
 });
 
 console.log(
-  "RESEND API KEY:",
-  process.env.RESEND_API_KEY ? "LOADED ✅" : "MISSING ❌"
+  "GMAIL CREDENTIALS:",
+  process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD ? "LOADED ✅" : "MISSING ❌"
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Gmail SMTP requires 2-Step Verification to be enabled on the account,
+// then an "App Password" generated at myaccount.google.com/apppasswords
+// (NOT your normal Gmail password). Unlike Resend's sandbox sender, this
+// has no domain-verification requirement — it can deliver to any real
+// customer address right away. Gmail does cap a standard account at
+// roughly 500 emails/day; revisit this if you outgrow that.
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  }
+});
 
-// The address emails are sent FROM. Resend's shared sandbox sender
-// ("onboarding@resend.dev") can only deliver to the email address on the
-// Resend account itself — it silently cannot deliver to real customers.
-// This was the root cause of customer confirmation emails not arriving.
-// Once a domain is verified in the Resend dashboard, set EMAIL_FROM in
-// .env to an address on that domain (e.g.
-// "Royal Dynasty Fragrance <orders@yourdomain.com>") to fix delivery.
-// Until then this falls back to the sandbox address so local testing
-// keeps working, with a clear warning that customer delivery won't work.
-const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev";
+// Gmail requires the "from" address to be the authenticated account
+// itself (or a verified alias of it) — you can still set a display name
+// via EMAIL_FROM, but the email portion must match GMAIL_USER.
+const EMAIL_FROM = process.env.EMAIL_FROM || process.env.GMAIL_USER;
 
-if (!process.env.EMAIL_FROM) {
+if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
   console.warn(
-    "⚠️  EMAIL_FROM is not set — using Resend's sandbox sender (onboarding@resend.dev), " +
-    "which can only deliver to the Resend account's own email, not real customers. " +
-    "Verify a domain in Resend and set EMAIL_FROM to fix customer email delivery."
+    "⚠️  GMAIL_USER / GMAIL_APP_PASSWORD are not both set — emails will fail to send. " +
+    "Generate an App Password at myaccount.google.com/apppasswords and set both in .env."
   );
 }
 
@@ -47,21 +52,15 @@ export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "royaldynastyfragrances@gm
 // =========================================
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    const result = await resend.emails.send({
+    const result = await transporter.sendMail({
       from: EMAIL_FROM,
       to,
       subject,
       html
     });
-
-    if (result?.error) {
-      console.error(`❌ Resend rejected the email to ${to}:`, result.error);
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, ...result };
+    return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error(`❌ Failed to send email to ${to}:`, error);
+    console.error(`❌ Failed to send email to ${to}:`, error.message);
     return { success: false, error: error.message };
   }
 };
@@ -74,51 +73,35 @@ export const sendOrderEmail = async ({ to, subject, html, adminSubject }) => {
 
   // Send to customer
   try {
-    const customerResult = await resend.emails.send({
+    const customerResult = await transporter.sendMail({
       from: EMAIL_FROM,
       to: to,
       subject: subject,
       html: html
     });
-
-    // The Resend SDK returns { data, error } rather than throwing on a
-    // rejected send (e.g. the sandbox-sender restriction) — this was
-    // previously never checked, so a failed customer delivery was logged
-    // as a false "sent" success with no visibility into why it failed.
-    if (customerResult?.error) {
-      console.error(`❌ Resend rejected the customer email to ${to}:`, customerResult.error);
-      results.push({ type: 'customer', success: false, error: customerResult.error });
-    } else {
-      results.push({ type: 'customer', success: true, ...customerResult });
-      console.log(`✅ Customer email sent to: ${to}`);
-    }
+    results.push({ type: 'customer', success: true, messageId: customerResult.messageId });
+    console.log(`✅ Customer email sent to: ${to}`);
   } catch (error) {
-    console.error(`❌ Failed to send to customer ${to}:`, error);
+    console.error(`❌ Failed to send to customer ${to}:`, error.message);
     results.push({ type: 'customer', success: false, error: error.message });
   }
 
   // Send copy to admin
   try {
-    const adminResult = await resend.emails.send({
+    const adminResult = await transporter.sendMail({
       from: EMAIL_FROM,
       to: ADMIN_EMAIL,
       subject: adminSubject || `[ADMIN COPY] ${subject}`,
       html: html
     });
-
-    if (adminResult?.error) {
-      console.error(`❌ Resend rejected the admin copy to ${ADMIN_EMAIL}:`, adminResult.error);
-      results.push({ type: 'admin', success: false, error: adminResult.error });
-    } else {
-      results.push({ type: 'admin', success: true, ...adminResult });
-      console.log(`✅ Admin copy sent to: ${ADMIN_EMAIL}`);
-    }
+    results.push({ type: 'admin', success: true, messageId: adminResult.messageId });
+    console.log(`✅ Admin copy sent to: ${ADMIN_EMAIL}`);
   } catch (error) {
-    console.error(`❌ Failed to send admin copy:`, error);
+    console.error(`❌ Failed to send admin copy:`, error.message);
     results.push({ type: 'admin', success: false, error: error.message });
   }
 
   return results;
 };
 
-export default resend;
+export default transporter;
