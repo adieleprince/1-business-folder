@@ -18,6 +18,21 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ============================================================
+// TRUST PROXY (Render)
+// ============================================================
+// Render puts every web service behind a single reverse proxy/load
+// balancer, which sets X-Forwarded-For with the real client IP. Express
+// (and req.ip / express-rate-limit, which key off it) ignore that header
+// by default, so without this, express-rate-limit v8 throws
+// ERR_ERL_UNEXPECTED_X_FORWARDED_FOR as soon as it sees an XFF header it
+// isn't configured to trust. Trusting exactly 1 hop tells Express to use
+// the first (client) IP in X-Forwarded-For while still not trusting
+// anything a client could spoof beyond that one hop. This must be set
+// before any express-rate-limit middleware runs (all rate limiters are
+// mounted on routers required below), so it stays at the very top.
+app.set('trust proxy', 1);
+
+// ============================================================
 // CORS
 // ============================================================
 // Set ALLOWED_ORIGINS in .env to a comma-separated list of the exact

@@ -135,15 +135,29 @@ router.post("/", orderCreationLimiter, upload.single("receipt"), async (req, res
       throw createError;
     }
 
-    // Send order confirmation to customer + admin
+    // Send order confirmation to customer + admin. sendOrderEmail() already
+    // catches its own errors and never rejects, but it's guarded with a hard
+    // timeout as well so a slow/unresponsive SMTP connection can never leave
+    // this request (and the frontend's "Submitting..." button) hanging — the
+    // order has already been saved above regardless of whether this email
+    // step succeeds, times out, or fails outright.
     try {
       const emailContent = orderConfirmationEmail(order);
-      await sendOrderEmail({
-        to: order.email,
-        subject: emailContent.subject,
-        html: emailContent.html,
-        adminSubject: `[GHANA ORDER] ${emailContent.subject}`
-      });
+      const emailTimeout = new Promise((resolve) =>
+        setTimeout(() => resolve({ timedOut: true }), 25000)
+      );
+      const emailResult = await Promise.race([
+        sendOrderEmail({
+          to: order.email,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          adminSubject: `[GHANA ORDER] ${emailContent.subject}`
+        }),
+        emailTimeout
+      ]);
+      if (emailResult && emailResult.timedOut) {
+        console.error("GHANA ORDER EMAIL ERROR: timed out sending order confirmation");
+      }
     } catch (emailError) {
       console.error("GHANA ORDER EMAIL ERROR:", emailError);
       // Don't fail the order if email fails

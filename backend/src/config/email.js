@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import path from "path";
+import dns from "dns";
+import tls from "tls";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,12 +23,62 @@ console.log(
 // has no domain-verification requirement — it can deliver to any real
 // customer address right away. Gmail does cap a standard account at
 // roughly 500 emails/day; revisit this if you outgrow that.
+const GMAIL_SMTP_HOST = "smtp.gmail.com";
+const GMAIL_SMTP_PORT = 465;
+
+// Render's containers can report an IPv6 network interface as "available"
+// even though outbound IPv6 traffic isn't actually routable to the public
+// internet. Nodemailer's built-in resolver looks up both the A (IPv4) and
+// AAAA (IPv6) records for smtp.gmail.com and then picks randomly between
+// them, so roughly half the time it tries to open the connection over the
+// unreachable IPv6 address and hangs until it times out. Resolving the
+// hostname to an IPv4 address ourselves — freshly, on every connection,
+// via Nodemailer's `getSocket` hook — and opening the TLS socket to that
+// address directly sidesteps this, while `servername` keeps TLS hostname
+// verification checking against the real "smtp.gmail.com" certificate.
+function connectGmailSocketIPv4(_options, callback) {
+  let settled = false;
+  const finish = (err, result) => {
+    if (settled) return;
+    settled = true;
+    callback(err, result);
+  };
+
+  dns.resolve4(GMAIL_SMTP_HOST, (resolveErr, addresses) => {
+    const host = !resolveErr && addresses && addresses.length ? addresses[0] : GMAIL_SMTP_HOST;
+
+    let socket;
+    try {
+      socket = tls.connect(
+        {
+          host,
+          port: GMAIL_SMTP_PORT,
+          servername: GMAIL_SMTP_HOST
+        },
+        () => finish(null, { connection: socket, secured: true })
+      );
+    } catch (connectError) {
+      return finish(connectError);
+    }
+
+    socket.once("error", (socketError) => finish(socketError));
+  });
+}
+
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: GMAIL_SMTP_HOST,
+  port: GMAIL_SMTP_PORT,
+  secure: true,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD
-  }
+  },
+  getSocket: connectGmailSocketIPv4,
+  // Fail fast instead of hanging for Nodemailer's ~2 minute defaults if a
+  // connection somehow still can't be established.
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000
 });
 
 // Gmail requires the "from" address to be the authenticated account
