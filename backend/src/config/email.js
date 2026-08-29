@@ -25,17 +25,24 @@ console.log(
 // roughly 500 emails/day; revisit this if you outgrow that.
 const GMAIL_SMTP_HOST = "smtp.gmail.com";
 const GMAIL_SMTP_PORT = 465;
+const DNS_LOOKUP_TIMEOUT_MS = 8000;
+const TLS_CONNECT_TIMEOUT_MS = 10000;
 
 // Render's containers can report an IPv6 network interface as "available"
 // even though outbound IPv6 traffic isn't actually routable to the public
 // internet. Nodemailer's built-in resolver looks up both the A (IPv4) and
-// AAAA (IPv6) records for smtp.gmail.com and then picks randomly between
-// them, so roughly half the time it tries to open the connection over the
-// unreachable IPv6 address and hangs until it times out. Resolving the
-// hostname to an IPv4 address ourselves — freshly, on every connection,
-// via Nodemailer's `getSocket` hook — and opening the TLS socket to that
-// address directly sidesteps this, while `servername` keeps TLS hostname
-// verification checking against the real "smtp.gmail.com" certificate.
+// AAAA (IPv6) records for smtp.gmail.com and picks randomly between them,
+// so it can intermittently try the unreachable IPv6 address and hang.
+//
+// dns.lookup() (unlike dns.resolve4()) resolves through the OS's normal
+// getaddrinfo path rather than sending a raw DNS query itself, which is
+// what's reliably available on platforms like Render. Passing
+// { family: 4 } makes it return only an IPv4 address. Both this lookup and
+// the TLS handshake below are given hard timeouts, so if anything here
+// misbehaves it fails fast and visibly (in the "Failed to send" log lines)
+// instead of hanging silently — and on any failure we hand control back to
+// Nodemailer's own default connection logic rather than guaranteeing the
+// send fails outright.
 function connectGmailSocketIPv4(_options, callback) {
   let settled = false;
   const finish = (err, result) => {
@@ -44,24 +51,51 @@ function connectGmailSocketIPv4(_options, callback) {
     callback(err, result);
   };
 
-  dns.resolve4(GMAIL_SMTP_HOST, (resolveErr, addresses) => {
-    const host = !resolveErr && addresses && addresses.length ? addresses[0] : GMAIL_SMTP_HOST;
+  const dnsTimer = setTimeout(() => {
+    console.error("GMAIL SMTP: IPv4 DNS lookup timed out — falling back to default connection.");
+    finish(null, false); // false = let Nodemailer connect normally instead
+  }, DNS_LOOKUP_TIMEOUT_MS);
+
+  dns.lookup(GMAIL_SMTP_HOST, { family: 4 }, (lookupErr, address) => {
+    clearTimeout(dnsTimer);
+    if (settled) return;
+
+    if (lookupErr || !address) {
+      console.error(
+        "GMAIL SMTP: IPv4 DNS lookup failed — falling back to default connection.",
+        lookupErr ? lookupErr.message : "no address returned"
+      );
+      return finish(null, false);
+    }
 
     let socket;
+    const tlsTimer = setTimeout(() => {
+      console.error("GMAIL SMTP: TLS connection to Gmail (IPv4) timed out.");
+      if (socket) socket.destroy();
+      finish(new Error("Timed out connecting to Gmail SMTP over IPv4"));
+    }, TLS_CONNECT_TIMEOUT_MS);
+
     try {
       socket = tls.connect(
         {
-          host,
+          host: address,
           port: GMAIL_SMTP_PORT,
           servername: GMAIL_SMTP_HOST
         },
-        () => finish(null, { connection: socket, secured: true })
+        () => {
+          clearTimeout(tlsTimer);
+          finish(null, { connection: socket, secured: true });
+        }
       );
     } catch (connectError) {
+      clearTimeout(tlsTimer);
       return finish(connectError);
     }
 
-    socket.once("error", (socketError) => finish(socketError));
+    socket.once("error", (socketError) => {
+      clearTimeout(tlsTimer);
+      finish(socketError);
+    });
   });
 }
 
